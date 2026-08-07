@@ -212,7 +212,7 @@
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-cliente" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body" style="padding: 20px;">
+                <div class="modal-box__body" style="padding: 20px; max-height: 75vh; overflow-y: auto;">
                     <form id="form-cliente" style="display: flex; flex-direction: column; gap: 15px;">
                         <input type="hidden" id="cliente-id">
                         
@@ -221,12 +221,18 @@
                             <input type="text" id="cliente-nombre" placeholder="Ej. Carlos Gómez" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
                         </div>
                         
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado de Pago</label>
-                            <select id="cliente-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937; outline:none;">
-                                <option value="aldia">Al Día</option>
-                                <option value="moroso">Vencido</option>
-                            </select>
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado</label>
+                                <select id="cliente-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937; outline:none;">
+                                    <option value="aldia">Al Día</option>
+                                    <option value="moroso">Vencido</option>
+                                </select>
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Vencimiento</label>
+                                <input type="date" id="cliente-fecha-vencimiento" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none; font-family: inherit;">
+                            </div>
                         </div>
 
                         <div>
@@ -262,7 +268,7 @@
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
                 <h3 style="color: #1F2937; margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 800;">¿Registrar Pago?</h3>
-                <p style="color: #6B7280; font-size: 0.9rem; margin: 0 0 25px 0; line-height: 1.5;">El cliente pasará a estado "Al Día", se renovará su servicio por 30 días y se sumará al ingreso mensual.</p>
+                <p style="color: #6B7280; font-size: 0.9rem; margin: 0 0 25px 0; line-height: 1.5;">El cliente pasará a estado "Al Día" y se sumarán automáticamente 28 días a su fecha de vencimiento actual.</p>
                 <div style="display: flex; gap: 10px; justify-content: center;">
                     <button id="btn-cancelar-pago" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; border: 1px solid #D1D5DB; background: white; font-weight: 700; color: #4B5563; font-size: 0.9rem;" type="button">Cancelar</button>
                     <button id="btn-confirmar-pago" style="flex: 1; background-color: #10B981; padding: 12px; border-radius: 10px; border: none; color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" type="button">Confirmar Pago</button>

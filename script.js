@@ -28,11 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 2. BACKEND / MEMORIA PERSISTENTE (CERO REAL)
     // ==========================================
-    // Arranca completamente vacío, sin objetos quemados para simular una instalación limpia.
     let cuentas = JSON.parse(localStorage.getItem('streaming_cuentas')) || [];
     let clientes = JSON.parse(localStorage.getItem('streaming_clientes')) || [];
 
-    // Verificación automática de expiraciones (30 días de ciclo)
+    // Verificación exacta contra la fecha manual del cliente
     const verificarVencimientosClientes = () => {
         const ahora = Date.now();
         let actualizado = false;
@@ -64,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalMorosos = clientes.filter(c => c.estado === 'moroso').length;
         const totalIngresos = clientes.reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
 
-        // Renderizado dinámico de KPIs principales
         if (kpiMadres) kpiMadres.textContent = totalCuentas;
         if (kpiAldia) kpiAldia.textContent = totalAldia;
         if (kpiMora) kpiMora.textContent = totalMorosos;
@@ -323,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 6. MÓDULO: SECCIÓN CLIENTES (CRUD & PAGOS)
+    // 6. MÓDULO: SECCIÓN CLIENTES CON FECHA MANUAL
     // ==========================================
     const guardarYRenderizarClientes = () => {
         localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
@@ -358,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const esMoroso = c.estado === 'moroso';
             const iniciales = c.nombre.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
 
+            // Configuración visual de la tarjeta
             let icon = 'fa-solid fa-play'; let col = '#E50914';
             if(c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
             if(c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
@@ -366,6 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if(c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
             if(c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
             if(c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
+
+            // Procesar la fecha para mostrarla bonito en la tarjeta
+            let fechaTexto = 'Sin Fecha';
+            if (c.fechaVencimiento) {
+                const f = new Date(c.fechaVencimiento);
+                fechaTexto = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+            }
 
             const tarjeta = document.createElement('div');
             tarjeta.className = `cliente-card ${esMoroso ? 'card-alerta' : 'card-ok'}`;
@@ -386,7 +392,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="${icon}" style="color: ${col};"></i>
                         <div class="servicio-detalles">
                             <p class="serv-nom">${c.servicioPlataforma} (${c.servicioDetalle}) - <strong style="color: #10B981;">$${parseFloat(c.montoPago || 0).toFixed(2)}</strong></p>
-                            <p class="serv-mail">${c.servicioCorreo}</p>
+                            <p class="serv-mail" style="margin-bottom: 4px;">${c.servicioCorreo}</p>
+                            <p class="serv-mail" style="font-weight: 700;">
+                                <i class="fa-regular fa-calendar" style="color: ${esMoroso ? '#EF4444' : '#6B7280'}; font-size: 0.8rem; margin-right: 3px;"></i> 
+                                Vence: <span style="color: ${esMoroso ? '#EF4444' : '#1F2937'};">${fechaTexto}</span>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -431,6 +441,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if(formCliente) formCliente.reset();
         document.getElementById('cliente-id').value = '';
         document.getElementById('titulo-modal-cliente').textContent = 'Agregar Cliente';
+        
+        // Poner la fecha por defecto a 30 días vista al abrir para agregar nuevo
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 28);
+        const yyyy = defaultDate.getFullYear();
+        const mm = String(defaultDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(defaultDate.getDate()).padStart(2, '0');
+        document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
+
         if (modalCliente) modalCliente.style.display = 'flex';
     });
 
@@ -452,6 +471,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cliente-detalle').value = cliente.servicioDetalle;
         document.getElementById('cliente-correo').value = cliente.servicioCorreo;
         
+        // Cargar la fecha exacta que seleccionó el usuario anteriormente
+        if (cliente.fechaVencimiento) {
+            const fd = new Date(cliente.fechaVencimiento);
+            const yyyy = fd.getFullYear();
+            const mm = String(fd.getMonth() + 1).padStart(2, '0');
+            const dd = String(fd.getDate()).padStart(2, '0');
+            document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
+        }
+
         document.getElementById('titulo-modal-cliente').textContent = 'Editar Cliente';
         if (modalCliente) modalCliente.style.display = 'flex';
     };
@@ -462,8 +490,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const idForm = document.getElementById('cliente-id').value;
             const estadoElegido = document.getElementById('cliente-estado').value;
             
-            const treintaDiasMs = 30 * 24 * 60 * 60 * 1000;
-            const fechaVenc = estadoElegido === 'aldia' ? (Date.now() + treintaDiasMs) : (Date.now() - 1000);
+            // Leer la fecha exacta del campo input y forzarla al final del día
+            const fechaInput = document.getElementById('cliente-fecha-vencimiento').value;
+            const [year, month, day] = fechaInput.split('-');
+            const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
 
             const datosCliente = {
                 id: idForm ? parseInt(idForm) : Date.now(),
@@ -473,15 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 servicioPlataforma: document.getElementById('cliente-plataforma').value,
                 servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
                 servicioCorreo: document.getElementById('cliente-correo').value.trim(),
-                fechaVencimiento: fechaVenc
+                fechaVencimiento: fechaManual // Se guarda la fecha estricta seleccionada
             };
 
             if (idForm) {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
                 if(index > -1) {
-                    if(clientes[index].estado === datosCliente.estado && clientes[index].fechaVencimiento) {
-                        datosCliente.fechaVencimiento = clientes[index].fechaVencimiento;
-                    }
                     clientes[index] = datosCliente;
                 }
             } else {
@@ -536,9 +563,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if(clientePagoId) {
             const index = clientes.findIndex(c => c.id === clientePagoId);
             if(index > -1) {
-                const treintaDiasMs = 30 * 24 * 60 * 60 * 1000;
+                // Al presionar Renovar, suma automáticamente 30 días a la fecha manual ACTUAL
+                let baseDate = new Date();
+                if (clientes[index].fechaVencimiento > Date.now()) {
+                    baseDate = new Date(clientes[index].fechaVencimiento);
+                }
+                baseDate.setDate(baseDate.getDate() + 28);
+                
                 clientes[index].estado = 'aldia';
-                clientes[index].fechaVencimiento = Date.now() + treintaDiasMs;
+                clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
                 guardarYRenderizarClientes();
             }
             if(modalPago) modalPago.style.display = 'none';
