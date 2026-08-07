@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Streaming Mundial</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="mobile-header">
+        <div class="logo">
+            <h2>Streaming<span> Mundial</span></h2>
+        </div>
+    </header>
+
+    <main class="main-content">
+        
+        <div id="vista-inicio" class="vista-seccion">
+            <div class="top-section">
+                <h1>Resumen General</h1>
+            </div>
+
+            <section class="kpi-section">
+                <div class="kpi-card">
+                    <span class="kpi-card__title">Cuentas Madre</span>
+                    <h2 class="kpi-card__value" id="kpi-madres">0</h2>
+                </div>
+                <div class="kpi-card kpi-card--success">
+                    <span class="kpi-card__title">Al Día</span>
+                    <h2 class="kpi-card__value" id="kpi-aldia">0</h2>
+                </div>
+                <div class="kpi-card kpi-card--danger">
+                    <span class="kpi-card__title">Atrasado</span>
+                    <h2 class="kpi-card__value" id="kpi-mora">0</h2>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-card__title">Ingresos Mensuales</span>
+                    <h2 class="kpi-card__value" id="kpi-ingresos">$0.00</h2>
+                </div>
+            </section>
+
+            <section class="plataformas-section">
+                <h3 class="section-title">Servicios Activos</h3>
+                <div class="plataformas-grid" id="contenedor-plataformas"></div>
+            </section>
+        </div>
+
+        <div id="vista-cuentas" class="vista-seccion" style="display: none;">
+            <div class="top-section top-flex">
+                <div class="header-titulos">
+                    <h1>Cuentas Madre</h1>
+                    <p class="subtitle">Gestión de inventario y subcuentas</p>
+                </div>
+                <div class="acciones-top">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="buscador-cuentas" placeholder="Buscar por plataforma o correo...">
+                    </div>
+                    <button class="btn-primario" id="btn-agregar-cuenta" type="button">
+                        <i class="fa-solid fa-plus"></i> Agregar Cuenta
+                    </button>
+                </div>
+            </div>
+
+            <div class="filtros-plataformas">
+                <button class="btn-filtro active" data-filtro="Todas" type="button">Todas</button>
+                <button class="btn-filtro" data-filtro="Netflix" type="button"><i class="fa-solid fa-play" style="color: #E50914;"></i> Netflix</button>
+                <button class="btn-filtro" data-filtro="Max" type="button"><i class="fa-solid fa-tv" style="color: #002BE7;"></i> Max</button>
+                <button class="btn-filtro" data-filtro="Spotify" type="button"><i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify</button>
+                <button class="btn-filtro" data-filtro="Disney+" type="button"><i class="fa-solid fa-star" style="color: #113CCF;"></i> Disney+</button>
+                <button class="btn-filtro" data-filtro="Crunchyroll" type="button"><i class="fa-solid fa-fire" style="color: #F47521;"></i> Crunchyroll</button>
+                <button class="btn-filtro" data-filtro="YouTube Premium" type="button"><i class="fa-brands fa-youtube" style="color: #FF0000;"></i> YouTube Prem.</button>
+                <button class="btn-filtro" data-filtro="Canva" type="button"><i class="fa-solid fa-palette" style="color: #00C4CC;"></i> Canva</button>
+                <button class="btn-filtro" data-filtro="CapCut" type="button"><i class="fa-solid fa-video" style="color: #00F2FE;"></i> CapCut</button>
+            </div>
+
+            <div class="grupo-cuentas">
+                <div class="grid-cuentas"></div>
+            </div>
+        </div>
+
+        <div id="vista-clientes" class="vista-seccion" style="display: none;">
+            <div class="top-section top-flex">
+                <div class="header-titulos">
+                    <h1>Gestión de Clientes</h1>
+                    <p class="subtitle">Monitoreo de perfiles asignados y estados de pago</p>
+                </div>
+                <div class="acciones-top">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="buscador-clientes" placeholder="Buscar por cliente o correo...">
+                    </div>
+                    <button class="btn-primario" id="btn-agregar-cliente" type="button">
+                        <i class="fa-solid fa-user-plus"></i> Agregar Cliente
+                    </button>
+                </div>
+            </div>
+
+            <div class="filtros-plataformas">
+                <button class="btn-filtro active" data-filtro="todos" type="button">Todos</button>
+                <button class="btn-filtro" data-filtro="aldia" type="button"><i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Al Día</button>
+                <button class="btn-filtro" data-filtro="vencidos" type="button"><i class="fa-solid fa-circle-exclamation" style="color: #EF4444;"></i> Vencidos</button>
+            </div>
+
+            <div class="grupo-clientes">
+                <div class="grid-clientes"></div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-subcuentas" style="display: none;">
+            <div class="modal-box" style="max-width: 500px;">
+                <div class="modal-box__header">
+                    <div>
+                        <h3 style="color: #1F2937; margin: 0;">Gestionar Subcuentas</h3>
+                        <p class="correo-ref" id="modal-correo-ref" style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;"></p>
+                    </div>
+                    <button class="btn-cerrar-modal" id="cerrar-modal-sub" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-box__body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+                    <div id="contenedor-lista-perfiles" style="display: flex; flex-direction: column; gap: 15px;"></div>
+                    <button type="button" class="btn-primario" id="btn-guardar-cambios-subcuentas" style="width: 100%; margin-top: 20px; justify-content: center; padding: 12px; border-radius: 8px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-agregar-cuenta" style="display: none;">
+            <div class="modal-box">
+                <div class="modal-box__header">
+                    <div>
+                        <h3 style="color: #1F2937; margin: 0;">Agregar Cuenta Madre</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;">Registra un nuevo servicio principal</p>
+                    </div>
+                    <button class="btn-cerrar-modal" id="cerrar-modal-agregar" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-box__body" style="padding: 20px;">
+                    <form id="form-agregar-cuenta" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Plataforma</label>
+                            <select id="nuevo-plataforma" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937;">
+                                <option value="Netflix">Netflix</option>
+                                <option value="Spotify">Spotify</option>
+                                <option value="Max">Max</option>
+                                <option value="Disney+">Disney+</option>
+                                <option value="Crunchyroll">Crunchyroll</option>
+                                <option value="YouTube Premium">YouTube Premium</option>
+                                <option value="Canva">Canva</option>
+                                <option value="CapCut">CapCut</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Correo Principal</label>
+                            <input type="email" id="nuevo-correo" placeholder="correo@gmail.com" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Cantidad de Perfiles</label>
+                            <input type="number" id="nuevo-perfiles" value="5" min="1" max="10" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado Inicial</label>
+                            <select id="nuevo-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937;">
+                                <option value="aldia">Al Día</option>
+                                <option value="por-vencer">Por Vencer</option>
+                                <option value="vencida">Vencida</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primario" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; border-radius: 8px;">Guardar Cuenta Madre</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-eliminar" style="display: none; z-index: 3000;">
+            <div class="modal-box modal-box--danger">
+                <div class="modal-box__danger-icon">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </div>
+                <h3 class="modal-box__title">¿Eliminar Cuenta?</h3>
+                <p class="modal-box__text">Esta acción es irreversible. Se borrarán todos los perfiles asignados y perderás el registro de esta cuenta madre.</p>
+                <div class="modal-box__buttons">
+                    <button id="btn-cancelar-eliminar" class="btn-modal-secundario" type="button">Cancelar</button>
+                    <button id="btn-confirmar-eliminar" class="btn-modal-danger" type="button">Sí, eliminar</button>
+                </div>
+            </div>
+        </div> 
+
+        <div class="modal-overlay" id="modal-eliminar-cliente" style="display: none; z-index: 3000;">
+            <div class="modal-box modal-box--danger">
+                <div class="modal-box__danger-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="modal-box__title">¿Eliminar Cliente?</h3>
+                <p class="modal-box__text">Esta acción es permanente. Se removerá al cliente del registro y perderás el historial de su servicio asignado.</p>
+                <div class="modal-box__buttons">
+                    <button id="btn-cancelar-eliminar-cliente" class="btn-modal-secundario" type="button">Cancelar</button>
+                    <button id="btn-confirmar-eliminar-cliente" class="btn-modal-danger" type="button">Sí, eliminar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-cliente" style="display: none; z-index: 2000;">
+            <div class="modal-box">
+                <div class="modal-box__header">
+                    <div>
+                        <h3 id="titulo-modal-cliente" style="color: #1F2937; margin: 0;">Agregar Cliente</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;">Registra o edita los datos del usuario</p>
+                    </div>
+                    <button class="btn-cerrar-modal" id="cerrar-modal-cliente" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-box__body" style="padding: 20px;">
+                    <form id="form-cliente" style="display: flex; flex-direction: column; gap: 15px;">
+                        <input type="hidden" id="cliente-id">
+                        
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Nombre del Cliente</label>
+                            <input type="text" id="cliente-nombre" placeholder="Ej. Carlos Gómez" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        </div>
+                        
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado de Pago</label>
+                            <select id="cliente-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937; outline:none;">
+                                <option value="aldia">Al Día</option>
+                                <option value="moroso">Vencido</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Monto Pagado ($)</label>
+                            <input type="number" id="cliente-monto" placeholder="Ej. 10" step="0.01" min="0" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        </div>
+
+                        <div style="background: #F9FAFB; padding: 15px; border-radius: 10px; border: 1px solid #E5E7EB; margin-top: 5px;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #374151;">Servicio Asignado</h4>
+                            <select id="cliente-plataforma" style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; margin-bottom: 10px; outline:none; background:white;">
+                                <option value="Netflix">Netflix</option>
+                                <option value="Spotify">Spotify</option>
+                                <option value="Max">Max</option>
+                                <option value="Disney+">Disney+</option>
+                                <option value="Crunchyroll">Crunchyroll</option>
+                                <option value="YouTube Premium">YouTube Premium</option>
+                                <option value="Canva">Canva</option>
+                                <option value="CapCut">CapCut</option>
+                            </select>
+                            <input type="text" id="cliente-detalle" placeholder="Ej. Perfil 1 / Cupo 3" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; margin-bottom: 10px; outline:none;">
+                            <input type="email" id="cliente-correo" placeholder="correo.vinculado@gmail.com" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; outline:none;">
+                        </div>
+
+                        <button class="btn-primario" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; border-radius: 8px;" type="submit">Guardar Cliente</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-pago" style="display: none; z-index: 3000;">
+            <div class="modal-box" style="max-width: 380px; text-align: center; padding: 30px 25px; border-top: 4px solid #10B981;">
+                <div style="font-size: 3.5rem; color: #10B981; margin-bottom: 15px;">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h3 style="color: #1F2937; margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 800;">¿Registrar Pago?</h3>
+                <p style="color: #6B7280; font-size: 0.9rem; margin: 0 0 25px 0; line-height: 1.5;">El cliente pasará a estado "Al Día", se renovará su servicio por 30 días y se sumará al ingreso mensual.</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="btn-cancelar-pago" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; border: 1px solid #D1D5DB; background: white; font-weight: 700; color: #4B5563; font-size: 0.9rem;" type="button">Cancelar</button>
+                    <button id="btn-confirmar-pago" style="flex: 1; background-color: #10B981; padding: 12px; border-radius: 10px; border: none; color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" type="button">Confirmar Pago</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="bottom-island">
+        <a href="#" class="nav-item active" data-vista="inicio">
+            <img src="mapa-marcador-inicio.png" alt="Inicio" class="icon">
+            <span class="text">Inicio</span>
+        </a>
+        <a href="#" class="nav-item" data-vista="cuentas">
+            <img src="archivar-factura.png" alt="Cuentas" class="icon">
+            <span class="text">Cuentas</span>
+        </a>
+        <a href="#" class="nav-item" data-vista="clientes">
+            <img src="lapiz-de-usuario.png" alt="Clientes" class="icon">   
+            <span class="text">Clientes</span>
+        </a>
+    </nav>
+
+    <script src="script.js"></script>
+</body>
+</html>
