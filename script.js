@@ -697,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index > -1) {
             const c = clientes[index];
             const estaMoroso = c.estado === 'moroso';
-            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos para que no pierdas acceso a tus series favoritas! 🍿`;
+            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos!`;
             
             clientes[index].estadoAviso = 'avisado';
             guardarYRenderizarClientes();
