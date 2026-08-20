@@ -1,10 +1,30 @@
-
-
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ==========================================
-    // 1. SISTEMA DE NAVEGACIÓN (SPA)
-    // ==========================================
+    const mostrarNotificacion = (mensaje, tipo = 'success') => {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast--${tipo}`; // Adaptado a BEM
+        const icono = tipo === 'success' ? 'fa-circle-check' : 'fa-bell';
+        toast.innerHTML = `<i class="fa-solid ${icono}"></i> ${mensaje}`;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.add('toast--hiding');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
+
+    const toggleModal = (modalId, show) => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            if(show) { modal.classList.remove('modal-oculto'); } 
+            else { modal.classList.add('modal-oculto'); }
+        }
+    };
+
     const navItems = document.querySelectorAll('.nav-item');
     const vistas = document.querySelectorAll('.vista-seccion');
 
@@ -18,38 +38,121 @@ document.addEventListener('DOMContentLoaded', () => {
                 navItems.forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
 
-                vistas.forEach(vista => vista.style.display = 'none');
+                vistas.forEach(vista => {
+                    vista.classList.add('vista-oculta');
+                });
+                
                 const vistaAMostrar = document.getElementById(`vista-${destino}`);
-                if (vistaAMostrar) vistaAMostrar.style.display = 'block';
+                if (vistaAMostrar) vistaAMostrar.classList.remove('vista-oculta');
             });
         });
     }
 
-    // ==========================================
-    // 2. BACKEND / MEMORIA PERSISTENTE (CERO REAL)
-    // ==========================================
     let cuentas = JSON.parse(localStorage.getItem('streaming_cuentas')) || [];
     let clientes = JSON.parse(localStorage.getItem('streaming_clientes')) || [];
 
-    // Verificación exacta contra la fecha manual del cliente
     const verificarVencimientosClientes = () => {
-        const ahora = Date.now();
+        const ahora = new Date();
+        const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+        const hoyFin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999).getTime();
+
         let actualizado = false;
         clientes.forEach(c => {
-            if (c.estado === 'aldia' && c.fechaVencimiento && ahora > c.fechaVencimiento) {
-                c.estado = 'moroso';
+            let nuevoEstado = 'aldia';
+            
+            if (c.fechaVencimiento < hoyInicio) {
+                nuevoEstado = 'moroso';
+            } else if (c.fechaVencimiento >= hoyInicio && c.fechaVencimiento <= hoyFin) {
+                nuevoEstado = 'vence-hoy';
+            }
+
+            if (c.estado !== nuevoEstado) {
+                c.estado = nuevoEstado;
                 actualizado = true;
             }
         });
+        
         if (actualizado) {
             localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
         }
     };
-    verificarVencimientosClientes();
+    
+    const generarHTMLTarjetaCliente = (c) => {
+        const esMoroso = c.estado === 'moroso';
+        const esHoy = c.estado === 'vence-hoy';
+        const iniciales = c.nombre.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
 
-    // ==========================================
-    // 3. DASHBOARD Y CONTADORES 100% DINÁMICOS
-    // ==========================================
+        let bgGradient = 'gradient-aldia';
+        let badgeTexto = 'Al Día';
+        let badgeClase = 'badge-aldia';
+        let avatarColor = '#10B981';
+
+        if (esMoroso) {
+            bgGradient = 'gradient-atrasado';
+            badgeTexto = 'Atrasado';
+            badgeClase = 'badge-vencida';
+            avatarColor = '#EF4444';
+        } else if (esHoy) {
+            bgGradient = 'gradient-vence-hoy';
+            badgeTexto = 'Vence Hoy';
+            badgeClase = 'badge-vencida'; 
+            avatarColor = '#F59E0B';
+        }
+
+        let icon = 'fa-solid fa-play'; let col = '#E50914';
+        if(c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
+        if(c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
+        if(c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; col = '#113CCF'; }
+        if(c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; col = '#F47521'; }
+        if(c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
+        if(c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
+        if(c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
+
+        let fechaTexto = 'Sin Fecha';
+        if (c.fechaVencimiento) {
+            const f = new Date(c.fechaVencimiento);
+            fechaTexto = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+        }
+
+        return `
+            <div class="cliente-card ${bgGradient}">
+                <div class="cliente-card__header" style="border-bottom-color: rgba(0,0,0,0.05);">
+                    <div class="cliente-meta">
+                        <div class="cliente-avatar" style="background-color: ${avatarColor};">${iniciales}</div>
+                        <div>
+                            <h3>${c.nombre}</h3>
+                            <span class="badge ${badgeClase}" ${esHoy ? 'style="background: rgba(245,158,11,0.2); color: #F59E0B;"' : ''}>${badgeTexto}</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon-sub" onclick="eliminarCliente(${c.id})" title="Borrar" type="button"><i class="fa-solid fa-trash" style="color: #9CA3AF;"></i></button>
+                </div>
+                <div class="cliente-servicios">
+                    <h4>Servicios Contratados:</h4>
+                    <div class="servicio-linea">
+                        <i class="${icon}" style="color: ${col};"></i>
+                        <div class="servicio-detalles">
+                            <p class="serv-nom">${c.servicioPlataforma} (${c.servicioDetalle}) - <strong style="color: #10B981;">$${parseFloat(c.montoPago || 0).toFixed(2)}</strong></p>
+                            <p class="serv-mail" style="margin-bottom: 4px;">${c.servicioCorreo}</p>
+                            <p class="serv-mail" style="font-weight: 700;">
+                                <i class="fa-regular fa-calendar" style="color: ${esMoroso ? '#EF4444' : '#6B7280'}; font-size: 0.8rem; margin-right: 3px;"></i> 
+                                Vence: <span style="color: ${esMoroso ? '#EF4444' : '#1F2937'};">${fechaTexto}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- BOTONES DE WHATSAPP INTEGRADOS -->
+                <div class="cliente-card__actions">
+                    <button class="btn-accion-cliente" onclick="abrirModalCliente(${c.id})" type="button"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                    ${(esMoroso || esHoy) 
+                        ? `<button class="btn-accion-cliente" style="color: #EF4444; border-color: #EF4444;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-bell"></i> Cobrar</button>
+                           <button class="btn-accion-cliente" style="color: #25D366; border-color: rgba(37,211,102,0.3);" onclick="enviarRecordatorio(${c.id})" type="button" title="Enviar recordatorio"><i class="fa-brands fa-whatsapp"></i> ${c.estadoAviso === 'avisado' ? 'Reenviar' : 'Avisar'}</button>`
+                        : `<button class="btn-accion-cliente" style="color: #10B981;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-receipt"></i> Renovar</button>`
+                    }
+                </div>
+            </div>
+        `;
+    };
+
     const actualizarDashboard = () => {
         verificarVencimientosClientes();
 
@@ -60,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const totalCuentas = cuentas.length;
         const totalAldia = clientes.filter(c => c.estado === 'aldia').length;
-        const totalMorosos = clientes.filter(c => c.estado === 'moroso').length;
+        const totalMorosos = clientes.filter(c => c.estado === 'moroso' || c.estado === 'vence-hoy').length; 
         const totalIngresos = clientes.reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
 
         if (kpiMadres) kpiMadres.textContent = totalCuentas;
@@ -69,6 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (kpiIngresos) kpiIngresos.textContent = `$${totalIngresos.toFixed(2)}`;
 
         renderizarDashboardServicios();
+        
+        const contVenceHoy = document.getElementById('contenedor-vence-hoy');
+        const sectionVenceHoy = document.getElementById('section-vence-hoy');
+        if (contVenceHoy && sectionVenceHoy) {
+            const vencenHoy = clientes.filter(c => c.estado === 'vence-hoy');
+            if (vencenHoy.length > 0) {
+                sectionVenceHoy.classList.remove('vista-oculta');
+                contVenceHoy.innerHTML = vencenHoy.map(c => generarHTMLTarjetaCliente(c)).join('');
+            } else {
+                sectionVenceHoy.classList.add('vista-oculta');
+                contVenceHoy.innerHTML = '';
+            }
+        }
     };
 
     const contenedorPlataformas = document.getElementById('contenedor-plataformas');
@@ -110,9 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // ==========================================
-    // 4. MÓDULO: CUENTAS MADRE (CRUD)
-    // ==========================================
     const guardarYRenderizarCuentas = () => {
         localStorage.setItem('streaming_cuentas', JSON.stringify(cuentas));
         const filtroActivo = document.querySelector('#vista-cuentas .btn-filtro.active');
@@ -180,13 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const modalAgregar = document.getElementById('modal-agregar-cuenta');
-    const btnAbrirModalAgregar = document.getElementById('btn-agregar-cuenta');
-    const btnCerrarModalAgregar = document.getElementById('cerrar-modal-agregar');
+    const modalAgregarId = 'modal-agregar-cuenta';
     const formAgregarCuenta = document.getElementById('form-agregar-cuenta');
-
-    if (btnAbrirModalAgregar && modalAgregar) btnAbrirModalAgregar.addEventListener('click', () => modalAgregar.style.display = 'flex');
-    if (btnCerrarModalAgregar && modalAgregar) btnCerrarModalAgregar.addEventListener('click', () => modalAgregar.style.display = 'none');
+    document.getElementById('btn-agregar-cuenta')?.addEventListener('click', () => toggleModal(modalAgregarId, true));
+    document.getElementById('cerrar-modal-agregar')?.addEventListener('click', () => toggleModal(modalAgregarId, false));
     
     if (formAgregarCuenta) {
         formAgregarCuenta.addEventListener('submit', (e) => {
@@ -197,8 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const perfilesMax = parseInt(document.getElementById('nuevo-perfiles').value) || 5;
             const estado = document.getElementById('nuevo-estado').value;
 
-            let icono = 'fa-solid fa-play';
-            let color = '#E50914';
+            let icono = 'fa-solid fa-play'; let color = '#E50914';
             if (plataforma === 'Spotify') { icono = 'fa-brands fa-spotify'; color = '#1DB954'; }
             else if (plataforma === 'Max') { icono = 'fa-solid fa-tv'; color = '#002BE7'; }
             else if (plataforma === 'Disney+') { icono = 'fa-solid fa-star'; color = '#113CCF'; }
@@ -226,40 +335,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             cuentas.push(nuevaCuenta);
             guardarYRenderizarCuentas();
-            modalAgregar.style.display = 'none';
+            toggleModal(modalAgregarId, false);
             formAgregarCuenta.reset();
+            mostrarNotificacion('¡Cuenta Madre guardada con éxito!');
         });
     }
 
     let cuentaAEliminar = null;
-    const modalEliminar = document.getElementById('modal-eliminar');
-    window.abrirModalEliminar = function(id) { cuentaAEliminar = id; if (modalEliminar) modalEliminar.style.display = 'flex'; };
-    document.getElementById('btn-cancelar-eliminar')?.addEventListener('click', () => { if(modalEliminar) modalEliminar.style.display = 'none'; cuentaAEliminar = null; });
+    const modalEliminarId = 'modal-eliminar';
+    window.abrirModalEliminar = function(id) { cuentaAEliminar = id; toggleModal(modalEliminarId, true); };
+    document.getElementById('btn-cancelar-eliminar')?.addEventListener('click', () => { toggleModal(modalEliminarId, false); cuentaAEliminar = null; });
     document.getElementById('btn-confirmar-eliminar')?.addEventListener('click', () => {
         if (cuentaAEliminar) {
             cuentas = cuentas.filter(c => c.id !== cuentaAEliminar);
             guardarYRenderizarCuentas();
-            if(modalEliminar) modalEliminar.style.display = 'none';
+            toggleModal(modalEliminarId, false);
+            mostrarNotificacion('Cuenta eliminada', 'info');
         }
     });
 
-    // ==========================================
-    // 5. GESTIÓN DE PERFILES / SUBCUENTAS
-    // ==========================================
     let cuentaEnEdicionId = null;
-    const modalSubcuentas = document.getElementById('modal-subcuentas');
-    const btnCerrarModalSub = document.getElementById('cerrar-modal-sub');
-    const contenedorListaPerfiles = document.getElementById('contenedor-lista-perfiles');
-    const btnGuardarSubcuentas = document.getElementById('btn-guardar-cambios-subcuentas');
-
-    if (btnCerrarModalSub && modalSubcuentas) btnCerrarModalSub.addEventListener('click', () => modalSubcuentas.style.display = 'none');
+    const modalSubId = 'modal-subcuentas';
+    document.getElementById('cerrar-modal-sub')?.addEventListener('click', () => toggleModal(modalSubId, false));
 
     window.abrirModalSubcuentas = function(idCuenta) {
         const cuenta = cuentas.find(c => c.id === idCuenta);
         if (!cuenta) return;
 
         cuentaEnEdicionId = cuenta.id;
-        if (modalSubcuentas) modalSubcuentas.style.display = 'flex';
+        toggleModal(modalSubId, true);
 
         const correoRef = document.getElementById('modal-correo-ref');
         if (correoRef) correoRef.textContent = `${cuenta.plataforma} — ${cuenta.correo}`;
@@ -271,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        const contenedorListaPerfiles = document.getElementById('contenedor-lista-perfiles');
         if (contenedorListaPerfiles) {
             contenedorListaPerfiles.innerHTML = '';
             cuenta.subcuentas.forEach((sub, index) => {
@@ -293,36 +398,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    if (btnGuardarSubcuentas) {
-        btnGuardarSubcuentas.addEventListener('click', () => {
-            if (!cuentaEnEdicionId) return;
-            const cuenta = cuentas.find(c => c.id === cuentaEnEdicionId);
-            if (!cuenta) return;
+    document.getElementById('btn-guardar-cambios-subcuentas')?.addEventListener('click', () => {
+        if (!cuentaEnEdicionId) return;
+        const cuenta = cuentas.find(c => c.id === cuentaEnEdicionId);
+        if (!cuenta) return;
 
-            const itemsPerfiles = contenedorListaPerfiles.querySelectorAll('.perfil-item-box');
-            let ocupadosCount = 0;
+        const contenedorListaPerfiles = document.getElementById('contenedor-lista-perfiles');
+        const itemsPerfiles = contenedorListaPerfiles.querySelectorAll('.perfil-item-box');
+        let ocupadosCount = 0;
 
-            cuenta.subcuentas = [];
-            itemsPerfiles.forEach(item => {
-                const cajaNombre = item.querySelector('.input-nombre-perfil');
-                const cajaCorreo = item.querySelector('.input-correo-perfil');
-                
-                const nombreGuardado = cajaNombre ? cajaNombre.value.trim() : '';
-                const correoPerfilGuardado = cajaCorreo ? cajaCorreo.value.trim() : '';
-                
-                cuenta.subcuentas.push({ nombre: nombreGuardado, correoPerfil: correoPerfilGuardado });
-                if (nombreGuardado !== '') ocupadosCount++;
-            });
-
-            cuenta.perfilesOcupados = ocupadosCount;
-            guardarYRenderizarCuentas();
-            if (modalSubcuentas) modalSubcuentas.style.display = 'none';
+        cuenta.subcuentas = [];
+        itemsPerfiles.forEach(item => {
+            const cajaNombre = item.querySelector('.input-nombre-perfil');
+            const cajaCorreo = item.querySelector('.input-correo-perfil');
+            
+            const nombreGuardado = cajaNombre ? cajaNombre.value.trim() : '';
+            const correoPerfilGuardado = cajaCorreo ? cajaCorreo.value.trim() : '';
+            
+            cuenta.subcuentas.push({ nombre: nombreGuardado, correoPerfil: correoPerfilGuardado });
+            if (nombreGuardado !== '') ocupadosCount++;
         });
-    }
 
-    // ==========================================
-    // 6. MÓDULO: SECCIÓN CLIENTES CON FECHA MANUAL
-    // ==========================================
+        cuenta.perfilesOcupados = ocupadosCount;
+        guardarYRenderizarCuentas();
+        toggleModal(modalSubId, false);
+        mostrarNotificacion('Perfiles actualizados', 'success');
+    });
+
     const guardarYRenderizarClientes = () => {
         localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
         const filtroActivo = document.querySelector('#vista-clientes .btn-filtro.active');
@@ -333,17 +435,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderizarClientes = (filtroEstado = 'todos') => {
         verificarVencimientosClientes();
-        const grid = document.querySelector('.grid-clientes');
+        // ESTA ES LA CORRECCIÓN: Apuntamos solo a la grilla dentro de vista-clientes
+        const grid = document.querySelector('#vista-clientes .grid-clientes'); 
         if (!grid) return;
-        grid.innerHTML = '';
-
+        
         const textoBusqueda = (document.getElementById('buscador-clientes')?.value || '').toLowerCase();
         
         let filtrados = clientes.filter(c => {
             const coincideBusqueda = c.nombre.toLowerCase().includes(textoBusqueda) || c.servicioCorreo.toLowerCase().includes(textoBusqueda);
             const coincideEstado = filtroEstado === 'todos' || 
                                   (filtroEstado === 'aldia' && c.estado === 'aldia') || 
-                                  (filtroEstado === 'vencidos' && c.estado === 'moroso');
+                                  (filtroEstado === 'vencidos' && (c.estado === 'moroso' || c.estado === 'vence-hoy'));
             return coincideBusqueda && coincideEstado;
         });
 
@@ -351,68 +453,10 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No se encontraron clientes registrados.</p>`;
             return;
         }
-
-        filtrados.forEach(c => {
-            const esMoroso = c.estado === 'moroso';
-            const iniciales = c.nombre.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-
-            // Configuración visual de la tarjeta
-            let icon = 'fa-solid fa-play'; let col = '#E50914';
-            if(c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
-            if(c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
-            if(c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; col = '#113CCF'; }
-            if(c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; col = '#F47521'; }
-            if(c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
-            if(c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
-            if(c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
-
-            // Procesar la fecha para mostrarla bonito en la tarjeta
-            let fechaTexto = 'Sin Fecha';
-            if (c.fechaVencimiento) {
-                const f = new Date(c.fechaVencimiento);
-                fechaTexto = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
-            }
-
-            const tarjeta = document.createElement('div');
-            tarjeta.className = `cliente-card ${esMoroso ? 'card-alerta' : 'card-ok'}`;
-            tarjeta.innerHTML = `
-                <div class="cliente-card__header">
-                    <div class="cliente-meta">
-                        <div class="cliente-avatar" style="background-color: ${esMoroso ? '#EF4444' : '#3B82F6'};">${iniciales}</div>
-                        <div>
-                            <h3>${c.nombre}</h3>
-                            <span class="badge ${esMoroso ? 'badge-vencida' : 'badge-aldia'}">${esMoroso ? 'Vencido' : 'Al Día'}</span>
-                        </div>
-                    </div>
-                    <button class="btn-icon-sub" onclick="eliminarCliente(${c.id})" title="Borrar" type="button"><i class="fa-solid fa-trash" style="color: #9CA3AF;"></i></button>
-                </div>
-                <div class="cliente-servicios">
-                    <h4>Servicios Contratados:</h4>
-                    <div class="servicio-linea">
-                        <i class="${icon}" style="color: ${col};"></i>
-                        <div class="servicio-detalles">
-                            <p class="serv-nom">${c.servicioPlataforma} (${c.servicioDetalle}) - <strong style="color: #10B981;">$${parseFloat(c.montoPago || 0).toFixed(2)}</strong></p>
-                            <p class="serv-mail" style="margin-bottom: 4px;">${c.servicioCorreo}</p>
-                            <p class="serv-mail" style="font-weight: 700;">
-                                <i class="fa-regular fa-calendar" style="color: ${esMoroso ? '#EF4444' : '#6B7280'}; font-size: 0.8rem; margin-right: 3px;"></i> 
-                                Vence: <span style="color: ${esMoroso ? '#EF4444' : '#1F2937'};">${fechaTexto}</span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="cliente-card__actions">
-                    <button class="btn-accion-cliente" onclick="abrirModalCliente(${c.id})" type="button"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
-                    ${esMoroso 
-                        ? `<button class="btn-accion-cliente" style="color: #EF4444; border-color: #EF4444;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-bell"></i> Cobrar / Pago</button>`
-                        : `<button class="btn-accion-cliente" style="color: #10B981;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-receipt"></i> Renovar</button>`
-                    }
-                </div>
-            `;
-            grid.appendChild(tarjeta);
-        });
+        
+        grid.innerHTML = filtrados.map(c => generarHTMLTarjetaCliente(c)).join('');
     };
 
-    // Filtros e inputs de Clientes
     const inputBuscadorClientes = document.getElementById('buscador-clientes');
     const botonesFiltroClientes = document.querySelectorAll('#vista-clientes .btn-filtro');
 
@@ -432,17 +476,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Formulario de Cliente
-    const modalCliente = document.getElementById('modal-cliente');
+    const modalClienteId = 'modal-cliente';
     const formCliente = document.getElementById('form-cliente');
-    const btnCerrarCliente = document.getElementById('cerrar-modal-cliente');
     
     document.getElementById('btn-agregar-cliente')?.addEventListener('click', () => {
         if(formCliente) formCliente.reset();
         document.getElementById('cliente-id').value = '';
         document.getElementById('titulo-modal-cliente').textContent = 'Agregar Cliente';
         
-        // Poner la fecha por defecto a 30 días vista al abrir para agregar nuevo
         const defaultDate = new Date();
         defaultDate.setDate(defaultDate.getDate() + 28);
         const yyyy = defaultDate.getFullYear();
@@ -450,14 +491,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const dd = String(defaultDate.getDate()).padStart(2, '0');
         document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
 
-        if (modalCliente) modalCliente.style.display = 'flex';
+        toggleModal(modalClienteId, true);
     });
 
-    if (btnCerrarCliente && modalCliente) {
-        btnCerrarCliente.addEventListener('click', () => {
-            modalCliente.style.display = 'none';
-        });
-    }
+    document.getElementById('cerrar-modal-cliente')?.addEventListener('click', () => toggleModal(modalClienteId, false));
 
     window.abrirModalCliente = function(id) {
         const cliente = clientes.find(c => c.id === id);
@@ -465,13 +502,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('cliente-id').value = cliente.id;
         document.getElementById('cliente-nombre').value = cliente.nombre;
-        document.getElementById('cliente-estado').value = cliente.estado === 'moroso' ? 'moroso' : 'aldia';
+        document.getElementById('cliente-estado').value = (cliente.estado === 'moroso' || cliente.estado === 'vence-hoy') ? 'moroso' : 'aldia';
         document.getElementById('cliente-monto').value = cliente.montoPago || '';
         document.getElementById('cliente-plataforma').value = cliente.servicioPlataforma;
         document.getElementById('cliente-detalle').value = cliente.servicioDetalle;
         document.getElementById('cliente-correo').value = cliente.servicioCorreo;
         
-        // Cargar la fecha exacta que seleccionó el usuario anteriormente
+        // Cargar nuevos campos
+        document.getElementById('cliente-telefono').value = cliente.telefono || '';
+        document.getElementById('cliente-metodo-pago').value = cliente.metodoPago || 'Binance';
+        document.getElementById('cliente-contrasena').value = cliente.contrasena || '';
+        
         if (cliente.fechaVencimiento) {
             const fd = new Date(cliente.fechaVencimiento);
             const yyyy = fd.getFullYear();
@@ -481,89 +522,91 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.getElementById('titulo-modal-cliente').textContent = 'Editar Cliente';
-        if (modalCliente) modalCliente.style.display = 'flex';
+        toggleModal(modalClienteId, true);
     };
 
     if (formCliente) {
         formCliente.addEventListener('submit', (e) => {
             e.preventDefault();
             const idForm = document.getElementById('cliente-id').value;
-            const estadoElegido = document.getElementById('cliente-estado').value;
             
-            // Leer la fecha exacta del campo input y forzarla al final del día
             const fechaInput = document.getElementById('cliente-fecha-vencimiento').value;
             const [year, month, day] = fechaInput.split('-');
             const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
 
+            const telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
+            const metodoPago = document.getElementById('cliente-metodo-pago').value;
+            const contrasena = document.getElementById('cliente-contrasena').value.trim();
+
             const datosCliente = {
                 id: idForm ? parseInt(idForm) : Date.now(),
                 nombre: document.getElementById('cliente-nombre').value.trim(),
-                estado: estadoElegido,
+                estado: 'aldia', 
                 montoPago: parseFloat(document.getElementById('cliente-monto').value) || 0,
                 servicioPlataforma: document.getElementById('cliente-plataforma').value,
                 servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
                 servicioCorreo: document.getElementById('cliente-correo').value.trim(),
-                fechaVencimiento: fechaManual // Se guarda la fecha estricta seleccionada
+                fechaVencimiento: fechaManual,
+                telefono: telefono,
+                metodoPago: metodoPago,
+                contrasena: contrasena,
+                estadoAviso: idForm ? (clientes.find(c => c.id === parseInt(idForm))?.estadoAviso || 'pendiente') : 'pendiente'
             };
 
             if (idForm) {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
-                if(index > -1) {
-                    clientes[index] = datosCliente;
-                }
+                if(index > -1) { clientes[index] = datosCliente; }
             } else {
                 clientes.push(datosCliente);
             }
 
             guardarYRenderizarClientes();
-            if (modalCliente) modalCliente.style.display = 'none';
+            toggleModal(modalClienteId, false);
+            mostrarNotificacion('¡Cliente guardado! Abriendo WhatsApp...', 'success');
+
+            const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            
+            const mensajeWa = `¡Hola ${datosCliente.nombre}! 👋\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n📧 *Correo:* ${datosCliente.servicioCorreo}\n🔑 *Contraseña/PIN:* ${datosCliente.contrasena}\n📺 *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n🗓️ *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido. 🍿`;
+            
+            const urlWa = `https://wa.me/${datosCliente.telefono}?text=${encodeURIComponent(mensajeWa)}`;
+            window.open(urlWa, '_blank');
         });
     }
 
-    // Modal Custom: Eliminar Cliente
     let clienteAEliminarId = null;
-    const modalEliminarCliente = document.getElementById('modal-eliminar-cliente');
+    const modalEliminarClienteId = 'modal-eliminar-cliente';
 
     window.eliminarCliente = function(id) {
         clienteAEliminarId = id;
-        if (modalEliminarCliente) {
-            modalEliminarCliente.style.display = 'flex';
-        }
+        toggleModal(modalEliminarClienteId, true);
     };
 
-    document.getElementById('btn-cancelar-eliminar-cliente')?.addEventListener('click', () => {
-        if (modalEliminarCliente) modalEliminarCliente.style.display = 'none';
-        clienteAEliminarId = null;
-    });
+    document.getElementById('btn-cancelar-eliminar-cliente')?.addEventListener('click', () => { toggleModal(modalEliminarClienteId, false); clienteAEliminarId = null; });
 
     document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
         if (clienteAEliminarId !== null) {
             clientes = clientes.filter(c => c.id !== clienteAEliminarId);
             guardarYRenderizarClientes();
-            if (modalEliminarCliente) modalEliminarCliente.style.display = 'none';
+            toggleModal(modalEliminarClienteId, false);
             clienteAEliminarId = null;
+            mostrarNotificacion('Cliente eliminado', 'info');
         }
     });
 
-    // Renovaciones de Pago
     let clientePagoId = null;
-    const modalPago = document.getElementById('modal-pago');
+    const modalPagoId = 'modal-pago';
     
     window.abrirModalPago = function(id) {
         clientePagoId = id;
-        if(modalPago) modalPago.style.display = 'flex';
+        toggleModal(modalPagoId, true);
     };
 
-    document.getElementById('btn-cancelar-pago')?.addEventListener('click', () => {
-        if(modalPago) modalPago.style.display = 'none';
-        clientePagoId = null;
-    });
+    document.getElementById('btn-cancelar-pago')?.addEventListener('click', () => { toggleModal(modalPagoId, false); clientePagoId = null; });
 
     document.getElementById('btn-confirmar-pago')?.addEventListener('click', () => {
         if(clientePagoId) {
             const index = clientes.findIndex(c => c.id === clientePagoId);
             if(index > -1) {
-                // Al presionar Renovar, suma automáticamente 30 días a la fecha manual ACTUAL
                 let baseDate = new Date();
                 if (clientes[index].fechaVencimiento > Date.now()) {
                     baseDate = new Date(clientes[index].fechaVencimiento);
@@ -574,12 +617,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
                 guardarYRenderizarClientes();
             }
-            if(modalPago) modalPago.style.display = 'none';
+            toggleModal(modalPagoId, false);
             clientePagoId = null;
+            mostrarNotificacion('¡Pago registrado con éxito!');
         }
     });
 
-    // Inicializar app limpia
+    window.enviarRecordatorio = function(id) {
+        const index = clientes.findIndex(c => c.id === id);
+        if (index > -1) {
+            const c = clientes[index];
+            const estaMoroso = c.estado === 'moroso';
+            
+            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos para que no pierdas acceso a tus series favoritas! 🍿`;
+            
+            clientes[index].estadoAviso = 'avisado';
+            guardarYRenderizarClientes();
+            
+            const urlWa = `https://wa.me/${c.telefono}?text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWa, '_blank');
+            mostrarNotificacion('Recordatorio enviado', 'info');
+        }
+    };
+
     actualizarDashboard();
     renderizarCuentas();
     renderizarClientes('todos');

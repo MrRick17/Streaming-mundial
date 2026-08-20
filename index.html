@@ -9,15 +9,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-
-    <style>
-        * {
-            box-sizing: border-box !important;
-        }
-        input, select {
-            max-width: 100% !important;
-        }
-    </style>
 </head>
 <body>
     <header class="mobile-header">
@@ -52,13 +43,18 @@
                 </div>
             </section>
 
+            <section class="vence-hoy-section" id="section-vence-hoy">
+                <h3 class="section-title"><i class="fa-solid fa-clock icono-reloj" style="color: #F59E0B; margin-right: 8px;"></i> Clientes que Vencen Hoy</h3>
+                <div class="grid-clientes" id="contenedor-vence-hoy"></div>
+            </section>
+
             <section class="plataformas-section">
                 <h3 class="section-title">Servicios Activos</h3>
                 <div class="plataformas-grid" id="contenedor-plataformas"></div>
             </section>
         </div>
 
-        <div id="vista-cuentas" class="vista-seccion" style="display: none;">
+        <div id="vista-cuentas" class="vista-seccion vista-oculta">
             <div class="top-section top-flex">
                 <div class="header-titulos">
                     <h1>Cuentas Madre</h1>
@@ -77,14 +73,14 @@
 
             <div class="filtros-plataformas">
                 <button class="btn-filtro active" data-filtro="Todas" type="button">Todas</button>
-                <button class="btn-filtro" data-filtro="Netflix" type="button"><i class="fa-solid fa-play" style="color: #E50914;"></i> Netflix</button>
-                <button class="btn-filtro" data-filtro="Max" type="button"><i class="fa-solid fa-tv" style="color: #002BE7;"></i> Max</button>
-                <button class="btn-filtro" data-filtro="Spotify" type="button"><i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify</button>
-                <button class="btn-filtro" data-filtro="Disney+" type="button"><i class="fa-solid fa-star" style="color: #113CCF;"></i> Disney+</button>
-                <button class="btn-filtro" data-filtro="Crunchyroll" type="button"><i class="fa-solid fa-fire" style="color: #F47521;"></i> Crunchyroll</button>
-                <button class="btn-filtro" data-filtro="YouTube Premium" type="button"><i class="fa-brands fa-youtube" style="color: #FF0000;"></i> YouTube Prem.</button>
-                <button class="btn-filtro" data-filtro="Canva" type="button"><i class="fa-solid fa-palette" style="color: #00C4CC;"></i> Canva</button>
-                <button class="btn-filtro" data-filtro="CapCut" type="button"><i class="fa-solid fa-video" style="color: #00F2FE;"></i> CapCut</button>
+                <button class="btn-filtro" data-filtro="Netflix" type="button"><i class="fa-solid fa-play plat-netflix"></i> Netflix</button>
+                <button class="btn-filtro" data-filtro="Max" type="button"><i class="fa-solid fa-tv plat-max"></i> Max</button>
+                <button class="btn-filtro" data-filtro="Spotify" type="button"><i class="fa-brands fa-spotify plat-spotify"></i> Spotify</button>
+                <button class="btn-filtro" data-filtro="Disney+" type="button"><i class="fa-solid fa-star plat-disney"></i> Disney+</button>
+                <button class="btn-filtro" data-filtro="Crunchyroll" type="button"><i class="fa-solid fa-fire plat-crunchyroll"></i> Crunchyroll</button>
+                <button class="btn-filtro" data-filtro="YouTube Premium" type="button"><i class="fa-brands fa-youtube plat-youtube"></i> YouTube Prem.</button>
+                <button class="btn-filtro" data-filtro="Canva" type="button"><i class="fa-solid fa-palette plat-canva"></i> Canva</button>
+                <button class="btn-filtro" data-filtro="CapCut" type="button"><i class="fa-solid fa-video plat-capcut"></i> CapCut</button>
             </div>
 
             <div class="grupo-cuentas">
@@ -92,7 +88,7 @@
             </div>
         </div>
 
-        <div id="vista-clientes" class="vista-seccion" style="display: none;">
+        <div id="vista-clientes" class="vista-seccion vista-oculta">
             <div class="top-section top-flex">
                 <div class="header-titulos">
                     <h1>Gestión de Clientes</h1>
@@ -111,8 +107,8 @@
 
             <div class="filtros-plataformas">
                 <button class="btn-filtro active" data-filtro="todos" type="button">Todos</button>
-                <button class="btn-filtro" data-filtro="aldia" type="button"><i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Al Día</button>
-                <button class="btn-filtro" data-filtro="vencidos" type="button"><i class="fa-solid fa-circle-exclamation" style="color: #EF4444;"></i> Vencidos</button>
+                <button class="btn-filtro" data-filtro="aldia" type="button"><i class="fa-solid fa-circle-check plat-spotify"></i> Al Día</button>
+                <button class="btn-filtro" data-filtro="vencidos" type="button"><i class="fa-solid fa-circle-exclamation plat-netflix"></i> Vencidos</button>
             </div>
 
             <div class="grupo-clientes">
@@ -120,38 +116,40 @@
             </div>
         </div>
 
-        <div class="modal-overlay" id="modal-subcuentas" style="display: none;">
-            <div class="modal-box" style="max-width: 500px;">
+        <!-- MODAL GESTIONAR SUBCUENTAS -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-subcuentas">
+            <div class="modal-box box-wide">
                 <div class="modal-box__header">
                     <div>
-                        <h3 style="color: #1F2937; margin: 0;">Gestionar Subcuentas</h3>
-                        <p class="correo-ref" id="modal-correo-ref" style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;"></p>
+                        <h3 class="modal-title">Gestionar Subcuentas</h3>
+                        <p class="correo-ref" id="modal-correo-ref"></p>
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-sub" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
-                    <div id="contenedor-lista-perfiles" style="display: flex; flex-direction: column; gap: 15px;"></div>
-                    <button type="button" class="btn-primario" id="btn-guardar-cambios-subcuentas" style="width: 100%; margin-top: 20px; justify-content: center; padding: 12px; border-radius: 8px;">
+                <div class="modal-box__body box-scroll">
+                    <div id="contenedor-lista-perfiles" class="lista-perfiles-grid"></div>
+                    <button type="button" class="btn-primario btn-full-mt" id="btn-guardar-cambios-subcuentas">
                         <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="modal-overlay" id="modal-agregar-cuenta" style="display: none;">
+        <!-- MODAL AGREGAR CUENTA MADRE -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-agregar-cuenta">
             <div class="modal-box">
                 <div class="modal-box__header">
                     <div>
-                        <h3 style="color: #1F2937; margin: 0;">Agregar Cuenta Madre</h3>
-                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;">Registra un nuevo servicio principal</p>
+                        <h3 class="modal-title">Agregar Cuenta Madre</h3>
+                        <p class="correo-ref">Registra un nuevo servicio principal</p>
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-agregar" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body" style="padding: 20px;">
-                    <form id="form-agregar-cuenta" style="display: flex; flex-direction: column; gap: 15px;">
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Plataforma</label>
-                            <select id="nuevo-plataforma" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937;">
+                <div class="modal-box__body">
+                    <form id="form-agregar-cuenta" class="form-grid">
+                        <div class="form-group">
+                            <label>Plataforma</label>
+                            <select id="nuevo-plataforma" class="select-basic">
                                 <option value="Netflix">Netflix</option>
                                 <option value="Spotify">Spotify</option>
                                 <option value="Max">Max</option>
@@ -162,29 +160,30 @@
                                 <option value="CapCut">CapCut</option>
                             </select>
                         </div>
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Correo Principal</label>
-                            <input type="email" id="nuevo-correo" placeholder="correo@gmail.com" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        <div class="form-group">
+                            <label>Correo Principal</label>
+                            <input type="email" id="nuevo-correo" class="input-basic" placeholder="correo@gmail.com" required>
                         </div>
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Cantidad de Perfiles</label>
-                            <input type="number" id="nuevo-perfiles" value="5" min="1" max="10" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        <div class="form-group">
+                            <label>Cantidad de Perfiles</label>
+                            <input type="number" id="nuevo-perfiles" class="input-basic" value="5" min="1" max="10" required>
                         </div>
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado Inicial</label>
-                            <select id="nuevo-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937;">
+                        <div class="form-group">
+                            <label>Estado Inicial</label>
+                            <select id="nuevo-estado" class="select-basic">
                                 <option value="aldia">Al Día</option>
                                 <option value="por-vencer">Por Vencer</option>
                                 <option value="vencida">Vencida</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn-primario" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; border-radius: 8px;">Guardar Cuenta Madre</button>
+                        <button type="submit" class="btn-primario btn-full-mt">Guardar Cuenta Madre</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="modal-overlay" id="modal-eliminar" style="display: none; z-index: 3000;">
+        <!-- MODAL ELIMINAR CUENTA -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-eliminar">
             <div class="modal-box modal-box--danger">
                 <div class="modal-box__danger-icon">
                     <i class="fa-solid fa-circle-exclamation"></i>
@@ -198,7 +197,8 @@
             </div>
         </div> 
 
-        <div class="modal-overlay" id="modal-eliminar-cliente" style="display: none; z-index: 3000;">
+        <!-- MODAL ELIMINAR CLIENTE -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-eliminar-cliente">
             <div class="modal-box modal-box--danger">
                 <div class="modal-box__danger-icon">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -212,75 +212,129 @@
             </div>
         </div>
 
-        <div class="modal-overlay" id="modal-cliente" style="display: none; z-index: 2000;">
+        <!-- MODAL CLIENTE (NUEVO DISEÑO CON WHATSAPP) -->
+        <div class="modal-overlay modal-oculto z-medio" id="modal-cliente">
             <div class="modal-box">
                 <div class="modal-box__header">
                     <div>
-                        <h3 id="titulo-modal-cliente" style="color: #1F2937; margin: 0;">Agregar Cliente</h3>
-                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;">Registra o edita los datos del usuario</p>
+                        <h3 id="titulo-modal-cliente" class="modal-title">Agregar Cliente</h3>
+                        <p class="correo-ref">Registra o edita los datos del usuario</p>
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-cliente" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body" style="padding: 20px; max-height: 75vh; overflow-y: auto;">
-                    <form id="form-cliente" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="modal-box__body box-scroll">
+                    <form id="form-cliente" class="form-grid">
                         <input type="hidden" id="cliente-id">
                         
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Nombre del Cliente</label>
-                            <input type="text" id="cliente-nombre" placeholder="Ej. Carlos Gómez" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
+                        <div class="form-group">
+                            <label>Nombre del Cliente</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-user"></i>
+                                <input type="text" id="cliente-nombre" placeholder="Ej. Carlos Gómez" required>
+                            </div>
                         </div>
                         
-                        <div style="display: flex; gap: 10px;">
-                            <div style="flex: 1;">
-                                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Estado</label>
-                                <select id="cliente-estado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; background:white; color:#1F2937; outline:none;">
-                                    <option value="aldia">Al Día</option>
-                                    <option value="moroso">Vencido</option>
+                        <div class="form-group-row">
+                            <div class="form-group flex-1">
+                                <label>WhatsApp (Sin el +)</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-brands fa-whatsapp"></i>
+                                    <input type="tel" id="cliente-telefono" placeholder="Ej. 584141234567" required>
+                                </div>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Método de Pago</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-solid fa-wallet"></i>
+                                    <select id="cliente-metodo-pago">
+                                        <option value="Binance">Binance</option>
+                                        <option value="Pago Móvil">Pago Móvil</option>
+                                        <option value="Zelle">Zelle</option>
+                                        <option value="Efectivo">Efectivo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group-row">
+                            <div class="form-group flex-1">
+                                <label>Estado</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-solid fa-signal"></i>
+                                    <select id="cliente-estado">
+                                        <option value="aldia">Al Día</option>
+                                        <option value="moroso">Vencido</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Vencimiento</label>
+                                <div class="input-icon-wrapper">
+                                    <i class="fa-regular fa-calendar"></i>
+                                    <input type="date" id="cliente-fecha-vencimiento" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Monto Pagado ($)</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-money-bill-wave"></i>
+                                <input type="number" id="cliente-monto" placeholder="Ej. 10" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-box-highlight">
+                            <div class="highlight-header">
+                                <i class="fa-solid fa-star"></i>
+                                <h4>Servicio Asignado</h4>
+                            </div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-tv"></i>
+                                <select id="cliente-plataforma">
+                                    <option value="Netflix">Netflix</option>
+                                    <option value="Spotify">Spotify</option>
+                                    <option value="Max">Max</option>
+                                    <option value="Disney+">Disney+</option>
+                                    <option value="Crunchyroll">Crunchyroll</option>
+                                    <option value="YouTube Premium">YouTube Premium</option>
+                                    <option value="Canva">Canva</option>
+                                    <option value="CapCut">CapCut</option>
                                 </select>
                             </div>
-                            <div style="flex: 1;">
-                                <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Vencimiento</label>
-                                <input type="date" id="cliente-fecha-vencimiento" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none; font-family: inherit;">
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-users-rectangle"></i>
+                                <input type="text" id="cliente-detalle" placeholder="Ej. Perfil 1 / Cupo 3" required>
+                            </div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="cliente-correo" placeholder="correo.vinculado@gmail.com" required>
+                            </div>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="text" id="cliente-contrasena" placeholder="Contraseña o PIN del perfil" required>
                             </div>
                         </div>
 
-                        <div>
-                            <label style="display:block; font-size:0.85rem; font-weight:700; margin-bottom:6px; color:#374151;">Monto Pagado ($)</label>
-                            <input type="number" id="cliente-monto" placeholder="Ej. 10" step="0.01" min="0" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #E5E7EB; color:#1F2937; outline:none;">
-                        </div>
-
-                        <div style="background: #F9FAFB; padding: 15px; border-radius: 10px; border: 1px solid #E5E7EB; margin-top: 5px;">
-                            <h4 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #374151;">Servicio Asignado</h4>
-                            <select id="cliente-plataforma" style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; margin-bottom: 10px; outline:none; background:white;">
-                                <option value="Netflix">Netflix</option>
-                                <option value="Spotify">Spotify</option>
-                                <option value="Max">Max</option>
-                                <option value="Disney+">Disney+</option>
-                                <option value="Crunchyroll">Crunchyroll</option>
-                                <option value="YouTube Premium">YouTube Premium</option>
-                                <option value="Canva">Canva</option>
-                                <option value="CapCut">CapCut</option>
-                            </select>
-                            <input type="text" id="cliente-detalle" placeholder="Ej. Perfil 1 / Cupo 3" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; margin-bottom: 10px; outline:none;">
-                            <input type="email" id="cliente-correo" placeholder="correo.vinculado@gmail.com" required style="width:100%; padding:8px; border-radius:8px; border:1px solid #D1D5DB; outline:none;">
-                        </div>
-
-                        <button class="btn-primario" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; border-radius: 8px;" type="submit">Guardar Cliente</button>
+                        <button class="btn-primario btn-wa-submit" type="submit">
+                            <i class="fa-brands fa-whatsapp"></i> Entregar Cuenta
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="modal-overlay" id="modal-pago" style="display: none; z-index: 3000;">
-            <div class="modal-box" style="max-width: 380px; text-align: center; padding: 30px 25px; border-top: 4px solid #10B981;">
-                <div style="font-size: 3.5rem; color: #10B981; margin-bottom: 15px;">
+        <!-- MODAL PAGO/RENOVAR -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-pago">
+            <div class="modal-box modal-box--success">
+                <div class="modal-box__success-icon">
                     <i class="fa-solid fa-circle-check"></i>
                 </div>
-                <h3 style="color: #1F2937; margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 800;">¿Registrar Pago?</h3>
-                <p style="color: #6B7280; font-size: 0.9rem; margin: 0 0 25px 0; line-height: 1.5;">El cliente pasará a estado "Al Día" y se sumarán automáticamente 28 días a su fecha de vencimiento actual.</p>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button id="btn-cancelar-pago" style="flex: 1; padding: 12px; border-radius: 10px; cursor: pointer; border: 1px solid #D1D5DB; background: white; font-weight: 700; color: #4B5563; font-size: 0.9rem;" type="button">Cancelar</button>
-                    <button id="btn-confirmar-pago" style="flex: 1; background-color: #10B981; padding: 12px; border-radius: 10px; border: none; color: white; font-weight: 700; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);" type="button">Confirmar Pago</button>
+                <h3 class="modal-box__title">¿Registrar Pago?</h3>
+                <p class="modal-box__text">El cliente pasará a estado "Al Día" y se sumarán automáticamente 28 días a su fecha de vencimiento actual.</p>
+                <div class="modal-box__buttons">
+                    <button id="btn-cancelar-pago" class="btn-modal-secundario" type="button">Cancelar</button>
+                    <button id="btn-confirmar-pago" class="btn-modal-success" type="button">Confirmar Pago</button>
                 </div>
             </div>
         </div>
@@ -301,6 +355,8 @@
             <span class="text">Clientes</span>
         </a>
     </nav>
+    
+    <div id="toast-container" class="toast-container"></div>
 
     <script src="script.js"></script>
 </body>
