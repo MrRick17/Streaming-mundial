@@ -556,6 +556,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const modalClienteId = 'modal-cliente';
+    const selectPlataforma = document.getElementById('cliente-plataforma');
+    const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
+    const inputContrasena = document.getElementById('cliente-contrasena');
+    const inputCorreoBase = document.getElementById('cliente-correo');
+
+    if(selectPlataforma) {
+        selectPlataforma.addEventListener('change', (e) => {
+            if(e.target.value === 'Spotify') {
+                if(grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'flex';
+                if(inputContrasena) inputContrasena.placeholder = 'Contraseña Admin (Opcional)';
+                if(inputCorreoBase) inputCorreoBase.placeholder = 'Correo Admin / Cuenta Madre';
+            } else {
+                if(grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
+                if(inputContrasena) inputContrasena.placeholder = 'Contraseña o PIN del perfil';
+                if(inputCorreoBase) inputCorreoBase.placeholder = 'correo.vinculado@gmail.com';
+            }
+        });
+    }
     const formCliente = document.getElementById('form-cliente');
     
     document.getElementById('btn-agregar-cliente')?.addEventListener('click', () => {
@@ -590,6 +608,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cliente-telefono').value = cliente.telefono || '';
         document.getElementById('cliente-metodo-pago').value = cliente.metodoPago || 'Binance';
         document.getElementById('cliente-contrasena').value = cliente.contrasena || '';
+
+        const inputPersonal = document.getElementById('cliente-correo-personal');
+        if(inputPersonal) inputPersonal.value = cliente.correoPersonal || '';
+        document.getElementById('cliente-plataforma').dispatchEvent(new Event('change'));
         
         if (cliente.fechaVencimiento) {
             const fd = new Date(cliente.fechaVencimiento);
@@ -615,6 +637,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const metodoPago = document.getElementById('cliente-metodo-pago').value;
             const contrasena = document.getElementById('cliente-contrasena').value.trim();
 
+            const inputPersonal = document.getElementById('cliente-correo-personal');
+            const correoPersonal = inputPersonal && inputPersonal.parentElement.style.display !== 'none' ? inputPersonal.value.trim() : '';
+
             const datosCliente = {
                 id: idForm ? parseInt(idForm) : Date.now(),
                 nombre: document.getElementById('cliente-nombre').value.trim(),
@@ -623,6 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 servicioPlataforma: document.getElementById('cliente-plataforma').value,
                 servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
                 servicioCorreo: document.getElementById('cliente-correo').value.trim(),
+                correoPersonal: correoPersonal, // Se guarda el correo personal
                 fechaVencimiento: fechaManual,
                 telefono: telefono,
                 metodoPago: metodoPago,
@@ -634,7 +660,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
                 if(index > -1) { clientes[index] = datosCliente; }
             } else {
-                // ES UN CLIENTE NUEVO. Registramos su pago en el historial contable automáticamente
                 clientes.push(datosCliente);
                 registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma);
             }
@@ -644,7 +669,16 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarNotificacion('¡Cliente guardado! Abriendo WhatsApp...', 'success');
 
             const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const mensajeWa = `¡Hola ${datosCliente.nombre}! 👋\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n📧 *Correo:* ${datosCliente.servicioCorreo}\n🔑 *Contraseña/PIN:* ${datosCliente.contrasena}\n📺 *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n🗓️ *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido. 🍿`;
+            let mensajeWa = '';
+
+            // Construcción del mensaje con acentos y emojis blindados (Unicode)
+            if (datosCliente.servicioPlataforma === 'Spotify') {
+                // Mensaje Especial Spotify
+                mensajeWa = `\u00A1Hola ${datosCliente.nombre}! \uD83D\uDC4B\n\nAqu\u00ED tienes los detalles de tu cuenta de *Spotify*:\n\n\uD83D\uDCE7 *Tu Correo (Invitaci\u00F3n):* ${datosCliente.correoPersonal}\n\uD83C\uDFB5 *Plan:* ${datosCliente.servicioDetalle}\n\n\uD83D\uDDD3\uFE0F *Tu cuenta vence el:* ${fechaFormateada}\n\n\u00A1Gracias por tu compra! Disfruta tu m\u00FAsica. \uD83C\uDFA7`;
+            } else {
+                // Mensaje General (Netflix, Max, Disney, etc)
+                mensajeWa = `\u00A1Hola ${datosCliente.nombre}! \uD83D\uDC4B\n\nAqu\u00ED tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n\uD83D\uDCE7 *Correo:* ${datosCliente.servicioCorreo}\n\uD83D\uDD11 *Contrase\u00F1a/PIN:* ${datosCliente.contrasena}\n\uD83D\uDCFA *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n\uD83D\uDDD3\uFE0F *Tu cuenta vence el:* ${fechaFormateada}\n\n\u00A1Gracias por tu compra! Disfruta tu contenido. \uD83C\uDF7F`;
+            }
             
             const urlWa = `https://wa.me/${datosCliente.telefono}?text=${encodeURIComponent(mensajeWa)}`;
             window.open(urlWa, '_blank');
