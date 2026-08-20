@@ -19,6 +19,7 @@
 
     <main class="main-content">
         
+        <!-- VISTA INICIO -->
         <div id="vista-inicio" class="vista-seccion">
             <div class="top-section">
                 <h1>Resumen General</h1>
@@ -37,8 +38,8 @@
                     <span class="kpi-card__title">Atrasado</span>
                     <h2 class="kpi-card__value" id="kpi-mora">0</h2>
                 </div>
-                <div class="kpi-card">
-                    <span class="kpi-card__title">Ingresos Mensuales</span>
+                <div class="kpi-card kpi-card--info">
+                    <span class="kpi-card__title">Ingreso Estimado</span>
                     <h2 class="kpi-card__value" id="kpi-ingresos">$0.00</h2>
                 </div>
             </section>
@@ -54,6 +55,7 @@
             </section>
         </div>
 
+        <!-- VISTA CUENTAS -->
         <div id="vista-cuentas" class="vista-seccion vista-oculta">
             <div class="top-section top-flex">
                 <div class="header-titulos">
@@ -88,6 +90,7 @@
             </div>
         </div>
 
+        <!-- VISTA CLIENTES -->
         <div id="vista-clientes" class="vista-seccion vista-oculta">
             <div class="top-section top-flex">
                 <div class="header-titulos">
@@ -115,6 +118,45 @@
                 <div class="grid-clientes"></div>
             </div>
         </div>
+
+        <!-- VISTA REPORTES / FINANZAS -->
+        <div id="vista-reportes" class="vista-seccion vista-oculta">
+            <div class="top-section">
+                <h1>Reportes Financieros</h1>
+                <p class="subtitle">Análisis de ingresos y estado de cobranza</p>
+            </div>
+
+            <section class="kpi-section" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="kpi-card kpi-card--info">
+                    <span class="kpi-card__title">Total Mensual Estimado</span>
+                    <h2 class="kpi-card__value" id="rep-esperado">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Si todos pagan</p>
+                </div>
+                <div class="kpi-card kpi-card--success">
+                    <span class="kpi-card__title">Ingreso Recaudado Actual</span>
+                    <h2 class="kpi-card__value" id="rep-cobrado">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #10B981; margin-top: 5px;"><i class="fa-solid fa-arrow-trend-up"></i> Clientes al día</p>
+                </div>
+                <div class="kpi-card kpi-card--danger">
+                    <span class="kpi-card__title">Pagos Pendientes</span>
+                    <h2 class="kpi-card__value" id="rep-pendiente">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;"><i class="fa-solid fa-circle-exclamation"></i> Dinero en la calle</p>
+                </div>
+            </section>
+
+            <!-- NUEVO: HISTORIAL POR MESES -->
+            <section class="historial-section" style="margin-bottom: 30px;">
+                <h3 class="section-title">Historial de Ingresos Mensuales</h3>
+                <div class="grid-historial-meses" id="contenedor-historial-meses"></div>
+            </section>
+
+            <section class="plataformas-section">
+                <h3 class="section-title">Desglose por Plataforma (Mes Actual)</h3>
+                <div class="plataformas-grid" id="contenedor-reporte-plataformas"></div>
+            </section>
+        </div>
+
+        <!-- ================= MODALES ================= -->
 
         <!-- MODAL GESTIONAR SUBCUENTAS -->
         <div class="modal-overlay modal-oculto z-alto" id="modal-subcuentas">
@@ -185,11 +227,9 @@
         <!-- MODAL ELIMINAR CUENTA -->
         <div class="modal-overlay modal-oculto z-alto" id="modal-eliminar">
             <div class="modal-box modal-box--danger">
-                <div class="modal-box__danger-icon">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                </div>
+                <div class="modal-box__danger-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
                 <h3 class="modal-box__title">¿Eliminar Cuenta?</h3>
-                <p class="modal-box__text">Esta acción es irreversible. Se borrarán todos los perfiles asignados y perderás el registro de esta cuenta madre.</p>
+                <p class="modal-box__text">Esta acción es irreversible. Se borrarán todos los perfiles asignados y perderás el registro.</p>
                 <div class="modal-box__buttons">
                     <button id="btn-cancelar-eliminar" class="btn-modal-secundario" type="button">Cancelar</button>
                     <button id="btn-confirmar-eliminar" class="btn-modal-danger" type="button">Sí, eliminar</button>
@@ -200,11 +240,9 @@
         <!-- MODAL ELIMINAR CLIENTE -->
         <div class="modal-overlay modal-oculto z-alto" id="modal-eliminar-cliente">
             <div class="modal-box modal-box--danger">
-                <div class="modal-box__danger-icon">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                </div>
+                <div class="modal-box__danger-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 <h3 class="modal-box__title">¿Eliminar Cliente?</h3>
-                <p class="modal-box__text">Esta acción es permanente. Se removerá al cliente del registro y perderás el historial de su servicio asignado.</p>
+                <p class="modal-box__text">Esta acción es permanente. Se removerá al cliente del registro y perderás su historial.</p>
                 <div class="modal-box__buttons">
                     <button id="btn-cancelar-eliminar-cliente" class="btn-modal-secundario" type="button">Cancelar</button>
                     <button id="btn-confirmar-eliminar-cliente" class="btn-modal-danger" type="button">Sí, eliminar</button>
@@ -212,7 +250,7 @@
             </div>
         </div>
 
-        <!-- MODAL CLIENTE (DISEÑO CON WHATSAPP) -->
+        <!-- MODAL CLIENTE -->
         <div class="modal-overlay modal-oculto z-medio" id="modal-cliente">
             <div class="modal-box">
                 <div class="modal-box__header">
@@ -327,11 +365,9 @@
         <!-- MODAL PAGO/RENOVAR -->
         <div class="modal-overlay modal-oculto z-alto" id="modal-pago">
             <div class="modal-box modal-box--success">
-                <div class="modal-box__success-icon">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
+                <div class="modal-box__success-icon"><i class="fa-solid fa-circle-check"></i></div>
                 <h3 class="modal-box__title">¿Registrar Pago?</h3>
-                <p class="modal-box__text">El cliente pasará a estado "Al Día" y se sumarán automáticamente 28 días a su fecha de vencimiento actual.</p>
+                <p class="modal-box__text">El cliente pasará a estado "Al Día" y se anotará el ingreso en tu reporte mensual.</p>
                 <div class="modal-box__buttons">
                     <button id="btn-cancelar-pago" class="btn-modal-secundario" type="button">Cancelar</button>
                     <button id="btn-confirmar-pago" class="btn-modal-success" type="button">Confirmar Pago</button>
@@ -376,16 +412,15 @@
                     <button class="btn-cerrar-modal" id="cerrar-modal-notificacion" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="modal-box__body">
-                    <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 15px;">Se actualizó el correo. Haz clic en "Notificar" para enviar los nuevos datos de acceso a los clientes vinculados.</p>
-                    <div id="lista-clientes-notificar" style="display: flex; flex-direction: column; gap: 10px;">
-                        <!-- Aquí se inyectarán los clientes dinámicamente -->
-                    </div>
+                    <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 15px;">Se actualizó el correo. Haz clic en "Notificar" para enviar los nuevos datos a los clientes vinculados.</p>
+                    <div id="lista-clientes-notificar" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 </div>
             </div>
         </div>
 
     </main>
 
+    <!-- NAVEGACIÓN -->
     <nav class="bottom-island">
         <a href="#" class="nav-item active" data-vista="inicio">
             <i class="fa-solid fa-house icon"></i>
@@ -398,6 +433,10 @@
         <a href="#" class="nav-item" data-vista="clientes">
             <i class="fa-solid fa-user-pen icon"></i>
             <span class="text">Clientes</span>
+        </a>
+        <a href="#" class="nav-item" data-vista="reportes">
+            <i class="fa-solid fa-chart-line icon"></i>
+            <span class="text">Finanzas</span>
         </a>
     </nav>
     

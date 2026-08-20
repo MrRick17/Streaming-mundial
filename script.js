@@ -3,14 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const mostrarNotificacion = (mensaje, tipo = 'success') => {
         const container = document.getElementById('toast-container');
         if (!container) return;
-        
         const toast = document.createElement('div');
         toast.className = `toast toast--${tipo}`; 
         const icono = tipo === 'success' ? 'fa-circle-check' : 'fa-bell';
         toast.innerHTML = `<i class="fa-solid ${icono}"></i> ${mensaje}`;
-        
         container.appendChild(toast);
-        
         setTimeout(() => {
             toast.classList.add('toast--hiding');
             setTimeout(() => toast.remove(), 300);
@@ -20,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleModal = (modalId, show) => {
         const modal = document.getElementById(modalId);
         if (modal) {
-            if(show) { modal.classList.remove('modal-oculto'); } 
-            else { modal.classList.add('modal-oculto'); }
+            if(show) modal.classList.remove('modal-oculto'); 
+            else modal.classList.add('modal-oculto'); 
         }
     };
 
@@ -38,9 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 navItems.forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
 
-                vistas.forEach(vista => {
-                    vista.classList.add('vista-oculta');
-                });
+                vistas.forEach(vista => vista.classList.add('vista-oculta'));
                 
                 const vistaAMostrar = document.getElementById(`vista-${destino}`);
                 if (vistaAMostrar) vistaAMostrar.classList.remove('vista-oculta');
@@ -50,6 +45,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let cuentas = JSON.parse(localStorage.getItem('streaming_cuentas')) || [];
     let clientes = JSON.parse(localStorage.getItem('streaming_clientes')) || [];
+    let historialPagos = JSON.parse(localStorage.getItem('streaming_historial_pagos')) || [];
+
+    // ================== NUEVO: REGISTRAR EN EL HISTORIAL ==================
+    const registrarTransaccionHistorial = (monto, plataforma) => {
+        const fechaActual = new Date();
+        const mesStr = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`;
+        
+        historialPagos.push({
+            id: Date.now(),
+            monto: parseFloat(monto) || 0,
+            plataforma: plataforma,
+            fecha: fechaActual.getTime(),
+            mes: mesStr
+        });
+        localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
+    };
 
     const verificarVencimientosClientes = () => {
         const ahora = new Date();
@@ -59,22 +70,15 @@ document.addEventListener('DOMContentLoaded', () => {
         let actualizado = false;
         clientes.forEach(c => {
             let nuevoEstado = 'aldia';
-            
-            if (c.fechaVencimiento < hoyInicio) {
-                nuevoEstado = 'moroso';
-            } else if (c.fechaVencimiento >= hoyInicio && c.fechaVencimiento <= hoyFin) {
-                nuevoEstado = 'vence-hoy';
-            }
+            if (c.fechaVencimiento < hoyInicio) nuevoEstado = 'moroso';
+            else if (c.fechaVencimiento >= hoyInicio && c.fechaVencimiento <= hoyFin) nuevoEstado = 'vence-hoy';
 
             if (c.estado !== nuevoEstado) {
                 c.estado = nuevoEstado;
                 actualizado = true;
             }
         });
-        
-        if (actualizado) {
-            localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
-        }
+        if (actualizado) localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
     };
     
     const generarHTMLTarjetaCliente = (c) => {
@@ -88,15 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let avatarColor = '#10B981';
 
         if (esMoroso) {
-            bgGradient = 'gradient-atrasado';
-            badgeTexto = 'Atrasado';
-            badgeClase = 'badge-vencida';
-            avatarColor = '#EF4444';
+            bgGradient = 'gradient-atrasado'; badgeTexto = 'Atrasado'; badgeClase = 'badge-vencida'; avatarColor = '#EF4444';
         } else if (esHoy) {
-            bgGradient = 'gradient-vence-hoy';
-            badgeTexto = 'Vence Hoy';
-            badgeClase = 'badge-vencida'; 
-            avatarColor = '#F59E0B';
+            bgGradient = 'gradient-vence-hoy'; badgeTexto = 'Vence Hoy'; badgeClase = 'badge-vencida'; avatarColor = '#F59E0B';
         }
 
         let icon = 'fa-solid fa-play'; let col = '#E50914';
@@ -163,14 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalCuentas = cuentas.length;
         const totalAldia = clientes.filter(c => c.estado === 'aldia').length;
         const totalMorosos = clientes.filter(c => c.estado === 'moroso' || c.estado === 'vence-hoy').length; 
-        const totalIngresos = clientes.reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
+        const totalEsperado = clientes.reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
 
         if (kpiMadres) kpiMadres.textContent = totalCuentas;
         if (kpiAldia) kpiAldia.textContent = totalAldia;
         if (kpiMora) kpiMora.textContent = totalMorosos;
-        if (kpiIngresos) kpiIngresos.textContent = `$${totalIngresos.toFixed(2)}`;
+        if (kpiIngresos) kpiIngresos.textContent = `$${totalEsperado.toFixed(2)}`;
 
         renderizarDashboardServicios();
+        renderizarReportesFinancieros(totalEsperado);
         
         const contVenceHoy = document.getElementById('contenedor-vence-hoy');
         const sectionVenceHoy = document.getElementById('section-vence-hoy');
@@ -183,6 +182,101 @@ document.addEventListener('DOMContentLoaded', () => {
                 sectionVenceHoy.classList.add('vista-oculta');
                 contVenceHoy.innerHTML = '';
             }
+        }
+    };
+
+    const renderizarReportesFinancieros = (totalEsperado) => {
+        const totalCobrado = clientes.filter(c => c.estado === 'aldia').reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
+        const totalPendiente = totalEsperado - totalCobrado;
+
+        const repEsperado = document.getElementById('rep-esperado');
+        const repCobrado = document.getElementById('rep-cobrado');
+        const repPendiente = document.getElementById('rep-pendiente');
+
+        if(repEsperado) repEsperado.textContent = `$${totalEsperado.toFixed(2)}`;
+        if(repCobrado) repCobrado.textContent = `$${totalCobrado.toFixed(2)}`;
+        if(repPendiente) repPendiente.textContent = `$${totalPendiente.toFixed(2)}`;
+
+        // RENDERIZAR HISTORIAL DE MESES
+        const contHistorial = document.getElementById('contenedor-historial-meses');
+        if (contHistorial) {
+            const agrupadoMeses = historialPagos.reduce((acc, pago) => {
+                if (!acc[pago.mes]) acc[pago.mes] = 0;
+                acc[pago.mes] += pago.monto;
+                return acc;
+            }, {});
+
+            const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            const mesesOrdenados = Object.keys(agrupadoMeses).sort((a, b) => b.localeCompare(a)); 
+
+            let htmlHistorial = '';
+            mesesOrdenados.forEach(mes => {
+                const [year, month] = mes.split('-');
+                const nombreMes = nombresMeses[parseInt(month) - 1];
+                htmlHistorial += `
+                    <div class="plat-card" style="display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #10B981;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 12px; color: #10B981; font-size: 1.2rem;">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; color: #1F2937;">${nombreMes} ${year}</h3>
+                                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #6B7280;">Monto recaudado este mes</p>
+                            </div>
+                        </div>
+                        <h2 style="margin: 0; color: #10B981; font-size: 1.3rem;">$${agrupadoMeses[mes].toFixed(2)}</h2>
+                    </div>
+                `;
+            });
+
+            if (htmlHistorial === '') htmlHistorial = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay ingresos registrados en el historial mensual aún.</p>`;
+            contHistorial.innerHTML = htmlHistorial;
+        }
+
+        // RENDERIZAR DESGLOSE DE PLATAFORMAS
+        const contReportesPlat = document.getElementById('contenedor-reporte-plataformas');
+        if (contReportesPlat) {
+            contReportesPlat.innerHTML = '';
+            const plataformas = [
+                { nombre: 'Netflix', color: '#E50914', icono: 'fa-solid fa-play' },
+                { nombre: 'Max', color: '#002BE7', icono: 'fa-solid fa-tv' },
+                { nombre: 'Spotify', color: '#1DB954', icono: 'fa-brands fa-spotify' },
+                { nombre: 'Disney+', color: '#113CCF', icono: 'fa-solid fa-star' },
+                { nombre: 'Crunchyroll', color: '#F47521', icono: 'fa-solid fa-fire' },
+                { nombre: 'YouTube Premium', color: '#FF0000', icono: 'fa-brands fa-youtube' },
+                { nombre: 'Canva', color: '#7D2AE8', icono: 'fa-solid fa-palette' },
+                { nombre: 'CapCut', color: '#00F2FE', icono: 'fa-solid fa-video' }
+            ];
+
+            let htmlPlat = '';
+            plataformas.forEach(plat => {
+                const clientesPlat = clientes.filter(c => c.servicioPlataforma === plat.nombre);
+                if (clientesPlat.length === 0) return; 
+
+                const platEsperado = clientesPlat.reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
+                const platCobrado = clientesPlat.filter(c => c.estado === 'aldia').reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
+                const porcentaje = platEsperado === 0 ? 0 : Math.round((platCobrado / platEsperado) * 100);
+
+                htmlPlat += `
+                    <div class="plat-card" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="${plat.icono}" style="color: ${plat.color}; font-size: 1.5rem;"></i>
+                            <h3 style="margin: 0; font-size: 1.1rem; color: #1F2937;">${plat.nombre}</h3>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 10px; font-size: 0.9rem;">
+                            <span style="color: #6B7280;">Cobrado: <strong style="color: #10B981;">$${platCobrado.toFixed(2)}</strong></span>
+                            <span style="color: #6B7280;">Total: <strong style="color: #1F2937;">$${platEsperado.toFixed(2)}</strong></span>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-bar" style="width: ${porcentaje}%; background-color: ${plat.color};"></div>
+                        </div>
+                        <span style="font-size: 0.75rem; text-align: right; color: #9CA3AF; font-weight: 700;">${porcentaje}% Recaudado</span>
+                    </div>
+                `;
+            });
+
+            if (htmlPlat === '') htmlPlat = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay ingresos activos registrados.</p>`;
+            contReportesPlat.innerHTML = htmlPlat;
         }
     };
 
@@ -277,7 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const inputBuscadorCuentas = document.getElementById('buscador-cuentas');
     const botonesFiltroCuentas = document.querySelectorAll('#vista-cuentas .btn-filtro');
-    
     if (inputBuscadorCuentas) {
         inputBuscadorCuentas.addEventListener('input', (e) => {
             renderizarCuentas(e.target.value);
@@ -319,20 +412,12 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (plataforma === 'CapCut') { icono = 'fa-solid fa-video'; color = '#00F2FE'; }
 
             const subcuentasIniciales = [];
-            for (let i = 0; i < perfilesMax; i++) {
-                subcuentasIniciales.push({ nombre: '', correoPerfil: '' });
-            }
+            for (let i = 0; i < perfilesMax; i++) subcuentasIniciales.push({ nombre: '', correoPerfil: '' });
 
             const nuevaCuenta = {
-                id: Date.now(),
-                plataforma: plataforma,
-                icono: icono,
-                color: color,
-                correo: correoGuardado,
-                perfilesMax: perfilesMax,
-                perfilesOcupados: 0,
-                estado: estado,
-                subcuentas: subcuentasIniciales
+                id: Date.now(), plataforma: plataforma, icono: icono, color: color,
+                correo: correoGuardado, perfilesMax: perfilesMax, perfilesOcupados: 0,
+                estado: estado, subcuentas: subcuentasIniciales
             };
 
             cuentas.push(nuevaCuenta);
@@ -363,18 +448,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.abrirModalSubcuentas = function(idCuenta) {
         const cuenta = cuentas.find(c => c.id === idCuenta);
         if (!cuenta) return;
-
         cuentaEnEdicionId = cuenta.id;
         toggleModal(modalSubId, true);
-
         const correoRef = document.getElementById('modal-correo-ref');
         if (correoRef) correoRef.textContent = `${cuenta.plataforma} — ${cuenta.correo}`;
 
         if (!cuenta.subcuentas || cuenta.subcuentas.length !== cuenta.perfilesMax) {
             cuenta.subcuentas = [];
-            for (let i = 1; i <= cuenta.perfilesMax; i++) {
-                cuenta.subcuentas.push({ nombre: '', correoPerfil: '' });
-            }
+            for (let i = 1; i <= cuenta.perfilesMax; i++) cuenta.subcuentas.push({ nombre: '', correoPerfil: '' });
         }
 
         const contenedorListaPerfiles = document.getElementById('contenedor-lista-perfiles');
@@ -413,7 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsPerfiles.forEach(item => {
             const cajaNombre = item.querySelector('.input-nombre-perfil');
             const cajaCorreo = item.querySelector('.input-correo-perfil');
-            
             const nombreGuardado = cajaNombre ? cajaNombre.value.trim() : '';
             const correoPerfilGuardado = cajaCorreo ? cajaCorreo.value.trim() : '';
             
@@ -460,14 +540,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const inputBuscadorClientes = document.getElementById('buscador-clientes');
     const botonesFiltroClientes = document.querySelectorAll('#vista-clientes .btn-filtro');
-
     if (inputBuscadorClientes) {
         inputBuscadorClientes.addEventListener('input', () => {
             const activo = document.querySelector('#vista-clientes .btn-filtro.active');
             renderizarClientes(activo ? activo.getAttribute('data-filtro') : 'todos');
         });
     }
-
     botonesFiltroClientes.forEach(boton => {
         boton.addEventListener('click', () => {
             botonesFiltroClientes.forEach(b => b.classList.remove('active'));
@@ -529,7 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
         formCliente.addEventListener('submit', (e) => {
             e.preventDefault();
             const idForm = document.getElementById('cliente-id').value;
-            
             const fechaInput = document.getElementById('cliente-fecha-vencimiento').value;
             const [year, month, day] = fechaInput.split('-');
             const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
@@ -557,7 +634,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
                 if(index > -1) { clientes[index] = datosCliente; }
             } else {
+                // ES UN CLIENTE NUEVO. Registramos su pago en el historial contable automáticamente
                 clientes.push(datosCliente);
+                registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma);
             }
 
             guardarYRenderizarClientes();
@@ -565,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarNotificacion('¡Cliente guardado! Abriendo WhatsApp...', 'success');
 
             const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            
             const mensajeWa = `¡Hola ${datosCliente.nombre}! 👋\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n📧 *Correo:* ${datosCliente.servicioCorreo}\n🔑 *Contraseña/PIN:* ${datosCliente.contrasena}\n📺 *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n🗓️ *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido. 🍿`;
             
             const urlWa = `https://wa.me/${datosCliente.telefono}?text=${encodeURIComponent(mensajeWa)}`;
@@ -575,14 +653,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let clienteAEliminarId = null;
     const modalEliminarClienteId = 'modal-eliminar-cliente';
-
-    window.eliminarCliente = function(id) {
-        clienteAEliminarId = id;
-        toggleModal(modalEliminarClienteId, true);
-    };
-
+    window.eliminarCliente = function(id) { clienteAEliminarId = id; toggleModal(modalEliminarClienteId, true); };
     document.getElementById('btn-cancelar-eliminar-cliente')?.addEventListener('click', () => { toggleModal(modalEliminarClienteId, false); clienteAEliminarId = null; });
-
     document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
         if (clienteAEliminarId !== null) {
             clientes = clientes.filter(c => c.id !== clienteAEliminarId);
@@ -595,12 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let clientePagoId = null;
     const modalPagoId = 'modal-pago';
-    
-    window.abrirModalPago = function(id) {
-        clientePagoId = id;
-        toggleModal(modalPagoId, true);
-    };
-
+    window.abrirModalPago = function(id) { clientePagoId = id; toggleModal(modalPagoId, true); };
     document.getElementById('btn-cancelar-pago')?.addEventListener('click', () => { toggleModal(modalPagoId, false); clientePagoId = null; });
 
     document.getElementById('btn-confirmar-pago')?.addEventListener('click', () => {
@@ -608,18 +675,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = clientes.findIndex(c => c.id === clientePagoId);
             if(index > -1) {
                 let baseDate = new Date();
-                if (clientes[index].fechaVencimiento > Date.now()) {
-                    baseDate = new Date(clientes[index].fechaVencimiento);
-                }
+                if (clientes[index].fechaVencimiento > Date.now()) baseDate = new Date(clientes[index].fechaVencimiento);
                 baseDate.setDate(baseDate.getDate() + 28);
                 
                 clientes[index].estado = 'aldia';
                 clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
+                
+                // ES UNA RENOVACIÓN. Registramos el pago en el historial
+                registrarTransaccionHistorial(clientes[index].montoPago, clientes[index].servicioPlataforma);
+                
                 guardarYRenderizarClientes();
             }
             toggleModal(modalPagoId, false);
             clientePagoId = null;
-            mostrarNotificacion('¡Pago registrado con éxito!');
+            mostrarNotificacion('¡Pago registrado con éxito en el historial!');
         }
     });
 
@@ -628,7 +697,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (index > -1) {
             const c = clientes[index];
             const estaMoroso = c.estado === 'moroso';
-            
             const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos para que no pierdas acceso a tus series favoritas! 🍿`;
             
             clientes[index].estadoAviso = 'avisado';
@@ -640,9 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // ==========================================
-    // LÓGICA DE EDICIÓN Y NOTIFICACIÓN EN CADENA
-    // ==========================================
     const modalEditarCuentaId = 'modal-editar-cuenta';
     const formEditarCuenta = document.getElementById('form-editar-cuenta');
     document.getElementById('cerrar-modal-editar-cuenta')?.addEventListener('click', () => toggleModal(modalEditarCuentaId, false));
@@ -663,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const id = parseInt(document.getElementById('edit-cuenta-id').value);
             const nuevoCorreo = document.getElementById('edit-cuenta-correo').value.trim();
-            
             const cuenta = cuentas.find(c => c.id === id);
             if (!cuenta) return;
 
@@ -671,15 +735,11 @@ document.addEventListener('DOMContentLoaded', () => {
             cuenta.correo = nuevoCorreo;
             guardarYRenderizarCuentas(); 
 
-            const clientesAfectados = clientes.filter(c => 
-                c.servicioCorreo.toLowerCase() === correoViejo.toLowerCase() && 
-                c.servicioPlataforma === cuenta.plataforma
-            );
+            const clientesAfectados = clientes.filter(c => c.servicioCorreo.toLowerCase() === correoViejo.toLowerCase() && c.servicioPlataforma === cuenta.plataforma);
             
             if (clientesAfectados.length > 0) {
                 clientesAfectados.forEach(c => c.servicioCorreo = nuevoCorreo);
                 guardarYRenderizarClientes();
-                
                 toggleModal(modalEditarCuentaId, false);
                 abrirModalNotificacionMasiva(clientesAfectados, cuenta.plataforma, nuevoCorreo);
             } else {
@@ -710,7 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             contenedor.appendChild(item);
         });
-        
         toggleModal(modalNotificacionId, true);
     };
 
