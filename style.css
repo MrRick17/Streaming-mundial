@@ -612,6 +612,9 @@ body {
 /* =======================================================
    NUEVO SISTEMA DE MODALES (AQUÍ ESTÁ LA CORRECCIÓN)
    ======================================================= */
+/* =======================================================
+   NUEVO SISTEMA DE MODALES (CORRECCIÓN DE SCROLL MÓVIL)
+   ======================================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -631,15 +634,16 @@ body {
   border-radius: 20px;
   width: 90%;
   max-width: 450px;
+  /* MAGIA PARA MÓVILES: Límite de altura y flexbox en columna */
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   animation: modalFadeIn 0.25s ease;
 }
 .modal-box.box-wide {
   max-width: 500px;
-}
-.modal-box {
-  /* Esta era la parte vital que faltaba para el color y el espaciado */
 }
 .modal-box__header {
   display: flex;
@@ -648,6 +652,7 @@ body {
   padding: 20px 25px;
   border-bottom: 1px solid #F3F4F6;
   background-color: #F9FAFB;
+  flex-shrink: 0; /* Evita que el header se achique */
 }
 .modal-box__header .modal-title {
   color: #1F2937;
@@ -662,10 +667,19 @@ body {
 }
 .modal-box__body {
   padding: 20px 25px;
+  flex-grow: 1; /* Ocupa el resto del espacio del modal */
+  overflow-y: auto; /* Activa el scroll solo aquí adentro */
+  /* Barrita de scroll elegante */
 }
-.modal-box.box-scroll .modal-box__body {
-  max-height: 75vh;
-  overflow-y: auto;
+.modal-box__body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-box__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-box__body::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 10px;
 }
 .modal-box .btn-cerrar-modal {
   background: none;
