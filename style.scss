@@ -122,6 +122,7 @@ body{
 }
 
 /* --- NAVEGACIÓN --- */
+/* --- NAVEGACIÓN --- */
 .bottom-island {
     position: fixed;
     bottom: 20px;
@@ -130,26 +131,26 @@ body{
     background-color: rgba(255, 255, 255, 0.95); 
     backdrop-filter: blur(10px); 
     border-radius: 30px;
-    padding: 12px 20px;
+    padding: 10px 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around; /* Distribuir uniformemente */
     align-items: center;
-    box-shadow: 0 10px 25px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 25px 10px rgba(0,0,0,0.15);
     z-index: 100;
 }
 
 .nav-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-decoration: none; color: #9CA3AF; gap: 4px; transition: all 0.2s ease;
-    height: 50px; min-width: 50px;
+    height: 50px; min-width: 60px; /* Más ancho para que el texto no se monte */
 
-    .icon { font-size: 1.3rem; transition: all 0.3s ease; margin-left: 15px; }
-    .text { font-size: 0.7rem; margin-top: 4px; font-weight: 600; }
+    .icon { font-size: 1.4rem; transition: all 0.3s ease; }
+    .text { font-size: 0.75rem; margin-top: 2px; font-weight: 600; }
 
-    &:hover:not(.active) { color: $blanco; }
+    &:hover:not(.active) { color: #4B5563; } /* Gris oscuro al pasar el ratón */
     &.active {
         color: #3B82F6; 
-        .icon { font-size: 1.8rem; transform: translateY(5px); }
+        .icon { font-size: 1.7rem; transform: translateY(6px); } /* Baja y crece */
         .text { display: none; }
     }
 }
@@ -369,6 +370,7 @@ body{
     .plataformas-grid { grid-template-columns: repeat(3, 1fr); gap: 25px; }
     .grid-cuentas, .grid-clientes { grid-template-columns: repeat(2, 1fr); gap: 25px; }
 
+    /* Reemplazar esto dentro de tu @media (min-width: 1024px) */
     .bottom-island {
         top: 0; left: 0; bottom: 0; right: auto; width: 80px; height: 100vh; border-radius: 0 20px 20px 0;
         flex-direction: column; justify-content: flex-start; padding: 30px 0; gap: 15px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
@@ -376,11 +378,13 @@ body{
     }
     
     .nav-item {
-        flex-direction: row; width: 100%; height: auto; padding: 15px 25px; justify-content: center; gap: 15px;
-        .icon { font-size: 1.4rem; min-width: 30px; }
+        flex-direction: row; width: 100%; height: auto; padding: 15px 25px; justify-content: flex-start; gap: 15px;
+        .icon { font-size: 1.5rem; min-width: 30px; text-align: center; } /* Fija el ancho del icono para que los textos queden alineados */
         .text { display: none; margin-top: 0; font-size: 0.95rem; white-space: nowrap; }
-        &.active { .icon { font-size: 1.8rem; transform: none; } .text { display: none; } }
+        &.active { .icon { font-size: 1.5rem; transform: none; } .text { display: none; } }
     }
+    .bottom-island:hover .nav-item:not(.active) .text { display: block; animation: aparecerTexto 0.3s forwards; }
+    @keyframes aparecerTexto { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     .bottom-island:hover .nav-item:not(.active) .text { display: block; animation: aparecerTexto 0.3s forwards; }
     @keyframes aparecerTexto { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 

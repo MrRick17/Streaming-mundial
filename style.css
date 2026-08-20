@@ -244,6 +244,7 @@ body {
 }
 
 /* --- NAVEGACIÓN --- */
+/* --- NAVEGACIÓN --- */
 .bottom-island {
   position: fixed;
   bottom: 20px;
@@ -252,11 +253,11 @@ body {
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 30px;
-  padding: 12px 20px;
+  padding: 10px 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around; /* Distribuir uniformemente */
   align-items: center;
-  box-shadow: 0 10px 25px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 25px 10px rgba(0, 0, 0, 0.15);
   z-index: 100;
 }
 
@@ -270,28 +271,29 @@ body {
   gap: 4px;
   transition: all 0.2s ease;
   height: 50px;
-  min-width: 50px;
+  min-width: 60px; /* Más ancho para que el texto no se monte */
 }
 .nav-item .icon {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   transition: all 0.3s ease;
-  margin-left: 15px;
 }
 .nav-item .text {
-  font-size: 0.7rem;
-  margin-top: 4px;
+  font-size: 0.75rem;
+  margin-top: 2px;
   font-weight: 600;
 }
 .nav-item:hover:not(.active) {
-  color: #FFFFFF;
+  color: #4B5563;
 }
+.nav-item { /* Gris oscuro al pasar el ratón */ }
 .nav-item.active {
   color: #3B82F6;
 }
 .nav-item.active .icon {
-  font-size: 1.8rem;
-  transform: translateY(5px);
+  font-size: 1.7rem;
+  transform: translateY(6px);
 }
+.nav-item.active { /* Baja y crece */ }
 .nav-item.active .text {
   display: none;
 }
@@ -982,6 +984,7 @@ body {
     grid-template-columns: repeat(2, 1fr);
     gap: 25px;
   }
+  /* Reemplazar esto dentro de tu @media (min-width: 1024px) */
   .bottom-island {
     top: 0;
     left: 0;
@@ -1005,13 +1008,15 @@ body {
     width: 100%;
     height: auto;
     padding: 15px 25px;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 15px;
   }
   .nav-item .icon {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     min-width: 30px;
+    text-align: center;
   }
+  .nav-item { /* Fija el ancho del icono para que los textos queden alineados */ }
   .nav-item .text {
     display: none;
     margin-top: 0;
@@ -1019,11 +1024,25 @@ body {
     white-space: nowrap;
   }
   .nav-item.active .icon {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     transform: none;
   }
   .nav-item.active .text {
     display: none;
+  }
+  .bottom-island:hover .nav-item:not(.active) .text {
+    display: block;
+    animation: aparecerTexto 0.3s forwards;
+  }
+  @keyframes aparecerTexto {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
   .bottom-island:hover .nav-item:not(.active) .text {
     display: block;
