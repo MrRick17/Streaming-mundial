@@ -126,7 +126,7 @@
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-sub" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body box-scroll">
+                <div class="modal-box__body">
                     <div id="contenedor-lista-perfiles" class="lista-perfiles-grid"></div>
                     <button type="button" class="btn-primario btn-full-mt" id="btn-guardar-cambios-subcuentas">
                         <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
@@ -212,7 +212,7 @@
             </div>
         </div>
 
-        <!-- MODAL CLIENTE (NUEVO DISEÑO CON WHATSAPP) -->
+        <!-- MODAL CLIENTE (DISEÑO CON WHATSAPP) -->
         <div class="modal-overlay modal-oculto z-medio" id="modal-cliente">
             <div class="modal-box">
                 <div class="modal-box__header">
@@ -222,7 +222,7 @@
                     </div>
                     <button class="btn-cerrar-modal" id="cerrar-modal-cliente" type="button"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="modal-box__body box-scroll">
+                <div class="modal-box__body">
                     <form id="form-cliente" class="form-grid">
                         <input type="hidden" id="cliente-id">
                         
@@ -270,7 +270,7 @@
                             <div class="form-group flex-1">
                                 <label>Vencimiento</label>
                                 <div class="input-icon-wrapper">
-                                    <i class="fa-regular fa-calendar"></i>
+                                    <i class="fa-regular fa-calendar-days"></i>
                                     <input type="date" id="cliente-fecha-vencimiento" required>
                                 </div>
                             </div>
@@ -335,6 +335,51 @@
                 <div class="modal-box__buttons">
                     <button id="btn-cancelar-pago" class="btn-modal-secundario" type="button">Cancelar</button>
                     <button id="btn-confirmar-pago" class="btn-modal-success" type="button">Confirmar Pago</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL EDITAR CUENTA MADRE -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-editar-cuenta">
+            <div class="modal-box">
+                <div class="modal-box__header">
+                    <div>
+                        <h3 class="modal-title">Editar Cuenta Madre</h3>
+                        <p class="correo-ref">Actualiza el correo de acceso</p>
+                    </div>
+                    <button class="btn-cerrar-modal" id="cerrar-modal-editar-cuenta" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-box__body">
+                    <form id="form-editar-cuenta" class="form-grid">
+                        <input type="hidden" id="edit-cuenta-id">
+                        <div class="form-group">
+                            <label>Nuevo Correo Principal</label>
+                            <div class="input-icon-wrapper">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="edit-cuenta-correo" placeholder="nuevo.correo@gmail.com" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primario btn-full-mt">Guardar y Buscar Clientes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL NOTIFICACIÓN MASIVA EN CADENA -->
+        <div class="modal-overlay modal-oculto z-alto" id="modal-notificacion-masiva">
+            <div class="modal-box box-wide">
+                <div class="modal-box__header">
+                    <div>
+                        <h3 class="modal-title">Notificar Cambio</h3>
+                        <p class="correo-ref">Clientes afectados por el cambio de correo</p>
+                    </div>
+                    <button class="btn-cerrar-modal" id="cerrar-modal-notificacion" type="button"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="modal-box__body">
+                    <p style="font-size: 0.85rem; color: #6B7280; margin-bottom: 15px;">Se actualizó el correo. Haz clic en "Notificar" para enviar los nuevos datos de acceso a los clientes vinculados.</p>
+                    <div id="lista-clientes-notificar" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Aquí se inyectarán los clientes dinámicamente -->
+                    </div>
                 </div>
             </div>
         </div>

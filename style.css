@@ -244,7 +244,6 @@ body {
 }
 
 /* --- NAVEGACIÓN --- */
-/* --- NAVEGACIÓN --- */
 .bottom-island {
   position: fixed;
   bottom: 20px;
@@ -255,7 +254,7 @@ body {
   border-radius: 30px;
   padding: 10px 20px;
   display: flex;
-  justify-content: space-around; /* Distribuir uniformemente */
+  justify-content: space-around;
   align-items: center;
   box-shadow: 0 10px 25px 10px rgba(0, 0, 0, 0.15);
   z-index: 100;
@@ -271,7 +270,7 @@ body {
   gap: 4px;
   transition: all 0.2s ease;
   height: 50px;
-  min-width: 60px; /* Más ancho para que el texto no se monte */
+  min-width: 60px;
 }
 .nav-item .icon {
   font-size: 1.4rem;
@@ -285,7 +284,6 @@ body {
 .nav-item:hover:not(.active) {
   color: #4B5563;
 }
-.nav-item { /* Gris oscuro al pasar el ratón */ }
 .nav-item.active {
   color: #3B82F6;
 }
@@ -293,7 +291,6 @@ body {
   font-size: 1.7rem;
   transform: translateY(6px);
 }
-.nav-item.active { /* Baja y crece */ }
 .nav-item.active .text {
   display: none;
 }
@@ -610,9 +607,6 @@ body {
 }
 
 /* =======================================================
-   NUEVO SISTEMA DE MODALES (AQUÍ ESTÁ LA CORRECCIÓN)
-   ======================================================= */
-/* =======================================================
    NUEVO SISTEMA DE MODALES (CORRECCIÓN DE SCROLL MÓVIL)
    ======================================================= */
 .modal-overlay {
@@ -634,7 +628,6 @@ body {
   border-radius: 20px;
   width: 90%;
   max-width: 450px;
-  /* MAGIA PARA MÓVILES: Límite de altura y flexbox en columna */
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -652,7 +645,7 @@ body {
   padding: 20px 25px;
   border-bottom: 1px solid #F3F4F6;
   background-color: #F9FAFB;
-  flex-shrink: 0; /* Evita que el header se achique */
+  flex-shrink: 0;
 }
 .modal-box__header .modal-title {
   color: #1F2937;
@@ -667,9 +660,8 @@ body {
 }
 .modal-box__body {
   padding: 20px 25px;
-  flex-grow: 1; /* Ocupa el resto del espacio del modal */
-  overflow-y: auto; /* Activa el scroll solo aquí adentro */
-  /* Barrita de scroll elegante */
+  flex-grow: 1;
+  overflow-y: auto;
 }
 .modal-box__body::-webkit-scrollbar {
   width: 6px;
@@ -806,7 +798,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-/* Inputs Básicos para modal-agregar-cuenta (Sin Icono) */
 .input-basic, .select-basic {
   width: 100%;
   padding: 12px 14px;
@@ -823,7 +814,6 @@ body {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
-/* Inputs Avanzados para Modal Cliente (Con Icono) */
 .input-icon-wrapper {
   position: relative;
   display: flex;
@@ -998,7 +988,6 @@ body {
     grid-template-columns: repeat(2, 1fr);
     gap: 25px;
   }
-  /* Reemplazar esto dentro de tu @media (min-width: 1024px) */
   .bottom-island {
     top: 0;
     left: 0;
@@ -1030,7 +1019,6 @@ body {
     min-width: 30px;
     text-align: center;
   }
-  .nav-item { /* Fija el ancho del icono para que los textos queden alineados */ }
   .nav-item .text {
     display: none;
     margin-top: 0;
@@ -1043,20 +1031,6 @@ body {
   }
   .nav-item.active .text {
     display: none;
-  }
-  .bottom-island:hover .nav-item:not(.active) .text {
-    display: block;
-    animation: aparecerTexto 0.3s forwards;
-  }
-  @keyframes aparecerTexto {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
   }
   .bottom-island:hover .nav-item:not(.active) .text {
     display: block;

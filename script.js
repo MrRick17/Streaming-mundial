@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         
         const toast = document.createElement('div');
-        toast.className = `toast toast--${tipo}`; // Adaptado a BEM
+        toast.className = `toast toast--${tipo}`; 
         const icono = tipo === 'success' ? 'fa-circle-check' : 'fa-bell';
         toast.innerHTML = `<i class="fa-solid ${icono}"></i> ${mensaje}`;
         
@@ -140,7 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>
-                <!-- BOTONES DE WHATSAPP INTEGRADOS -->
                 <div class="cliente-card__actions">
                     <button class="btn-accion-cliente" onclick="abrirModalCliente(${c.id})" type="button"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
                     ${(esMoroso || esHoy) 
@@ -266,7 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="plat-card__actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #F3F4F6; padding-top: 15px;">
                     <button class="btn-accion primary" type="button" onclick="abrirModalSubcuentas(${c.id})" style="background-color: rgba(59, 130, 246, 0.1); color: #3B82F6; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">Gestionar Perfiles</button>
-                    <button class="btn-accion" type="button" onclick="abrirModalEliminar(${c.id})" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 6px; font-size: 1rem;" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-icon-sub" type="button" onclick="abrirModalEditarCuenta(${c.id})" title="Editar Correo"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon-sub delete-icon" type="button" onclick="abrirModalEliminar(${c.id})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 </div>
             `;
             grid.appendChild(tarjeta);
@@ -435,7 +437,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderizarClientes = (filtroEstado = 'todos') => {
         verificarVencimientosClientes();
-        // ESTA ES LA CORRECCIÓN: Apuntamos solo a la grilla dentro de vista-clientes
         const grid = document.querySelector('#vista-clientes .grid-clientes'); 
         if (!grid) return;
         
@@ -508,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('cliente-detalle').value = cliente.servicioDetalle;
         document.getElementById('cliente-correo').value = cliente.servicioCorreo;
         
-        // Cargar nuevos campos
         document.getElementById('cliente-telefono').value = cliente.telefono || '';
         document.getElementById('cliente-metodo-pago').value = cliente.metodoPago || 'Binance';
         document.getElementById('cliente-contrasena').value = cliente.contrasena || '';
@@ -638,6 +638,80 @@ document.addEventListener('DOMContentLoaded', () => {
             window.open(urlWa, '_blank');
             mostrarNotificacion('Recordatorio enviado', 'info');
         }
+    };
+
+    // ==========================================
+    // LÓGICA DE EDICIÓN Y NOTIFICACIÓN EN CADENA
+    // ==========================================
+    const modalEditarCuentaId = 'modal-editar-cuenta';
+    const formEditarCuenta = document.getElementById('form-editar-cuenta');
+    document.getElementById('cerrar-modal-editar-cuenta')?.addEventListener('click', () => toggleModal(modalEditarCuentaId, false));
+
+    window.abrirModalEditarCuenta = function(id) {
+        const cuenta = cuentas.find(c => c.id === id);
+        if (!cuenta) return;
+        document.getElementById('edit-cuenta-id').value = cuenta.id;
+        document.getElementById('edit-cuenta-correo').value = cuenta.correo;
+        toggleModal(modalEditarCuentaId, true);
+    };
+
+    const modalNotificacionId = 'modal-notificacion-masiva';
+    document.getElementById('cerrar-modal-notificacion')?.addEventListener('click', () => toggleModal(modalNotificacionId, false));
+
+    if (formEditarCuenta) {
+        formEditarCuenta.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('edit-cuenta-id').value);
+            const nuevoCorreo = document.getElementById('edit-cuenta-correo').value.trim();
+            
+            const cuenta = cuentas.find(c => c.id === id);
+            if (!cuenta) return;
+
+            const correoViejo = cuenta.correo;
+            cuenta.correo = nuevoCorreo;
+            guardarYRenderizarCuentas(); 
+
+            const clientesAfectados = clientes.filter(c => 
+                c.servicioCorreo.toLowerCase() === correoViejo.toLowerCase() && 
+                c.servicioPlataforma === cuenta.plataforma
+            );
+            
+            if (clientesAfectados.length > 0) {
+                clientesAfectados.forEach(c => c.servicioCorreo = nuevoCorreo);
+                guardarYRenderizarClientes();
+                
+                toggleModal(modalEditarCuentaId, false);
+                abrirModalNotificacionMasiva(clientesAfectados, cuenta.plataforma, nuevoCorreo);
+            } else {
+                toggleModal(modalEditarCuentaId, false);
+                mostrarNotificacion('Correo actualizado. No hay clientes vinculados a este correo.', 'success');
+            }
+        });
+    }
+
+    window.abrirModalNotificacionMasiva = function(clientesAfectados, plataforma, nuevoCorreo) {
+        const contenedor = document.getElementById('lista-clientes-notificar');
+        contenedor.innerHTML = '';
+        
+        clientesAfectados.forEach(c => {
+            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe informamos que por motivos de mantenimiento hemos actualizado el correo de acceso para tu cuenta de *${plataforma}*.\n\n📧 *Nuevo Correo:* ${nuevoCorreo}\n🔑 *Contraseña/PIN:* ${c.contrasena || 'La misma que ya tenías'}\n📺 *Perfil:* ${c.servicioDetalle}\n\nPor favor, utiliza este nuevo correo para iniciar sesión a partir de ahora. ¡Gracias por tu comprensión!`;
+            const urlWa = `https://wa.me/${c.telefono}?text=${encodeURIComponent(mensaje)}`;
+            
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; padding: 12px; border-radius: 10px; border: 1px solid #E5E7EB;';
+            item.innerHTML = `
+                <div>
+                    <strong style="color: #1F2937; display: block; font-size: 0.9rem;">${c.nombre}</strong>
+                    <span style="color: #6B7280; font-size: 0.8rem;">Perfil: ${c.servicioDetalle}</span>
+                </div>
+                <a href="${urlWa}" target="_blank" onclick="this.style.backgroundColor='#E5E7EB'; this.style.color='#9CA3AF'; this.innerHTML='<i class=\\'fa-solid fa-check\\'></i> Listo';" style="background: #25D366; color: white; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                    <i class="fa-brands fa-whatsapp"></i> Notificar
+                </a>
+            `;
+            contenedor.appendChild(item);
+        });
+        
+        toggleModal(modalNotificacionId, true);
     };
 
     actualizarDashboard();

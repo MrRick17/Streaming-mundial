@@ -122,7 +122,6 @@ body{
 }
 
 /* --- NAVEGACIÓN --- */
-/* --- NAVEGACIÓN --- */
 .bottom-island {
     position: fixed;
     bottom: 20px;
@@ -133,7 +132,7 @@ body{
     border-radius: 30px;
     padding: 10px 20px;
     display: flex;
-    justify-content: space-around; /* Distribuir uniformemente */
+    justify-content: space-around; 
     align-items: center;
     box-shadow: 0 10px 25px 10px rgba(0,0,0,0.15);
     z-index: 100;
@@ -142,15 +141,15 @@ body{
 .nav-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     text-decoration: none; color: #9CA3AF; gap: 4px; transition: all 0.2s ease;
-    height: 50px; min-width: 60px; /* Más ancho para que el texto no se monte */
+    height: 50px; min-width: 60px; 
 
     .icon { font-size: 1.4rem; transition: all 0.3s ease; }
     .text { font-size: 0.75rem; margin-top: 2px; font-weight: 600; }
 
-    &:hover:not(.active) { color: #4B5563; } /* Gris oscuro al pasar el ratón */
+    &:hover:not(.active) { color: #4B5563; } 
     &.active {
         color: #3B82F6; 
-        .icon { font-size: 1.7rem; transform: translateY(6px); } /* Baja y crece */
+        .icon { font-size: 1.7rem; transform: translateY(6px); } 
         .text { display: none; }
     }
 }
@@ -234,9 +233,6 @@ body{
 .cliente-card.gradient-atrasado { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left: 5px solid #EF4444; }
 
 /* =======================================================
-   NUEVO SISTEMA DE MODALES (AQUÍ ESTÁ LA CORRECCIÓN)
-   ======================================================= */
-/* =======================================================
    NUEVO SISTEMA DE MODALES (CORRECCIÓN DE SCROLL MÓVIL)
    ======================================================= */
 .modal-overlay {
@@ -249,12 +245,9 @@ body{
     border-radius: 20px; 
     width: 90%; 
     max-width: 450px;
-    
-    /* MAGIA PARA MÓVILES: Límite de altura y flexbox en columna */
     max-height: 85vh; 
     display: flex; 
     flex-direction: column; 
-    
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
     overflow: hidden; 
     animation: modalFadeIn 0.25s ease;
@@ -264,7 +257,7 @@ body{
     &__header {
         display: flex; justify-content: space-between; align-items: center; padding: 20px 25px;
         border-bottom: 1px solid #F3F4F6; background-color: #F9FAFB;
-        flex-shrink: 0; /* Evita que el header se achique */
+        flex-shrink: 0; 
         
         .modal-title { color: $texto-principal; margin: 0; font-size: 1.25rem; font-weight: 800; }
         .correo-ref { margin: 4px 0 0 0; font-size: 0.85rem; color: $texto-secundario; }
@@ -272,10 +265,9 @@ body{
     
     &__body {
         padding: 20px 25px;
-        flex-grow: 1; /* Ocupa el resto del espacio del modal */
-        overflow-y: auto; /* Activa el scroll solo aquí adentro */
+        flex-grow: 1; 
+        overflow-y: auto; 
         
-        /* Barrita de scroll elegante */
         &::-webkit-scrollbar { width: 6px; }
         &::-webkit-scrollbar-track { background: transparent; }
         &::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
@@ -324,14 +316,12 @@ body{
     }
 }
 
-/* Inputs Básicos para modal-agregar-cuenta (Sin Icono) */
 .input-basic, .select-basic {
     width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #D1D5DB; background: transparent;
     color: $texto-principal; outline: none; font-family: inherit; font-size: 0.9rem;
     &:focus { border-color: $color-acento; box-shadow: 0 0 0 4px rgba($color-acento, 0.15); }
 }
 
-/* Inputs Avanzados para Modal Cliente (Con Icono) */
 .input-icon-wrapper {
     position: relative; display: flex; align-items: center; background: $blanco; border-radius: 10px;
     i { position: absolute; left: 14px; color: #9CA3AF; font-size: 1rem; transition: color 0.3s ease, transform 0.3s ease; pointer-events: none; }
@@ -386,7 +376,6 @@ body{
     .plataformas-grid { grid-template-columns: repeat(3, 1fr); gap: 25px; }
     .grid-cuentas, .grid-clientes { grid-template-columns: repeat(2, 1fr); gap: 25px; }
 
-    /* Reemplazar esto dentro de tu @media (min-width: 1024px) */
     .bottom-island {
         top: 0; left: 0; bottom: 0; right: auto; width: 80px; height: 100vh; border-radius: 0 20px 20px 0;
         flex-direction: column; justify-content: flex-start; padding: 30px 0; gap: 15px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden;
@@ -395,12 +384,10 @@ body{
     
     .nav-item {
         flex-direction: row; width: 100%; height: auto; padding: 15px 25px; justify-content: flex-start; gap: 15px;
-        .icon { font-size: 1.5rem; min-width: 30px; text-align: center; } /* Fija el ancho del icono para que los textos queden alineados */
+        .icon { font-size: 1.5rem; min-width: 30px; text-align: center; } 
         .text { display: none; margin-top: 0; font-size: 0.95rem; white-space: nowrap; }
         &.active { .icon { font-size: 1.5rem; transform: none; } .text { display: none; } }
     }
-    .bottom-island:hover .nav-item:not(.active) .text { display: block; animation: aparecerTexto 0.3s forwards; }
-    @keyframes aparecerTexto { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     .bottom-island:hover .nav-item:not(.active) .text { display: block; animation: aparecerTexto 0.3s forwards; }
     @keyframes aparecerTexto { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
