@@ -48,12 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let historialPagos = JSON.parse(localStorage.getItem('streaming_historial_pagos')) || [];
 
     // ================== NUEVO: REGISTRAR EN EL HISTORIAL ==================
-    const registrarTransaccionHistorial = (monto, plataforma) => {
+    const registrarTransaccionHistorial = (monto, plataforma, clienteId) => {
         const fechaActual = new Date();
         const mesStr = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`;
         
         historialPagos.push({
             id: Date.now(),
+            clienteId: clienteId, // <-- Vinculamos el pago a este cliente
             monto: parseFloat(monto) || 0,
             plataforma: plataforma,
             fecha: fechaActual.getTime(),
@@ -659,9 +660,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (idForm) {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
                 if(index > -1) { clientes[index] = datosCliente; }
+                
+                // NUEVO: Si editaste un cliente, corregir su monto y plataforma en el historial
+                historialPagos.forEach(pago => {
+                    if (pago.clienteId === parseInt(idForm)) {
+                        pago.monto = datosCliente.montoPago;
+                        pago.plataforma = datosCliente.servicioPlataforma;
+                    }
+                });
+                localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
+
             } else {
                 clientes.push(datosCliente);
-                registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma);
+                // NUEVO: Enviamos el ID al crear un cliente
+                registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma, datosCliente.id);
             }
 
             guardarYRenderizarClientes();
@@ -692,6 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
         if (clienteAEliminarId !== null) {
             clientes = clientes.filter(c => c.id !== clienteAEliminarId);
+            
+            // NUEVO: Borrar también sus pagos del historial
+            historialPagos = historialPagos.filter(pago => pago.clienteId !== clienteAEliminarId);
+            localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
+
             guardarYRenderizarClientes();
             toggleModal(modalEliminarClienteId, false);
             clienteAEliminarId = null;
@@ -716,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
                 
                 // ES UNA RENOVACIÓN. Registramos el pago en el historial
-                registrarTransaccionHistorial(clientes[index].montoPago, clientes[index].servicioPlataforma);
+                registrarTransaccionHistorial(clientes[index].montoPago, clientes[index].servicioPlataforma, clientes[index].id);
                 
                 guardarYRenderizarClientes();
             }
