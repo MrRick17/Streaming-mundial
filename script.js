@@ -692,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mensajeWa = `\u00A1Hola ${datosCliente.nombre}! \uD83D\uDC4B\n\nAqu\u00ED tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n\uD83D\uDCE7 *Correo:* ${datosCliente.servicioCorreo}\n\uD83D\uDD11 *Contrase\u00F1a/PIN:* ${datosCliente.contrasena}\n\uD83D\uDCFA *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n\uD83D\uDDD3\uFE0F *Tu cuenta vence el:* ${fechaFormateada}\n\n\u00A1Gracias por tu compra! Disfruta tu contenido. \uD83C\uDF7F`;
             }
             
-            const urlWa = `https://wa.me/${datosCliente.telefono}?text=${encodeURIComponent(mensajeWa)}`;
+           const urlWa = `https://api.whatsapp.com/send?phone=${datosCliente.telefono}&text=${encodeURIComponent(mensajeWa)}`;
             window.open(urlWa, '_blank');
         });
     }
