@@ -42,6 +42,16 @@
                     <span class="kpi-card__title">Ingreso Estimado</span>
                     <h2 class="kpi-card__value" id="kpi-ingresos">$0.00</h2>
                 </div>
+                <div class="kpi-card kpi-card--danger">
+                <span class="kpi-card__title">Pago a Proveedores</span>
+                    <h2 class="kpi-card__value" id="rep-proveedores">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;">Costo de Cuentas Madre</p>
+                </div>
+                <div class="kpi-card" style="border-top-color: #7D2AE8;">
+        <span class="kpi-card__title">Ganancia Neta</span>
+        <h2 class="kpi-card__value" id="rep-ganancia" style="color: #7D2AE8;">$0.00</h2>
+        <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Tu beneficio real</p>
+    </div>
             </section>
 
             <section class="vence-hoy-section" id="section-vence-hoy">
@@ -126,21 +136,33 @@
                 <p class="subtitle">Análisis de ingresos y estado de cobranza</p>
             </div>
 
-            <section class="kpi-section" style="grid-template-columns: repeat(3, 1fr);">
+            <section class="kpi-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
                 <div class="kpi-card kpi-card--info">
-                    <span class="kpi-card__title">Total Mensual Estimado</span>
+                    <span class="kpi-card__title">Total Esperado</span>
                     <h2 class="kpi-card__value" id="rep-esperado">$0.00</h2>
                     <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Si todos pagan</p>
                 </div>
                 <div class="kpi-card kpi-card--success">
-                    <span class="kpi-card__title">Ingreso Recaudado Actual</span>
+                    <span class="kpi-card__title">Recaudado Actual</span>
                     <h2 class="kpi-card__value" id="rep-cobrado">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #10B981; margin-top: 5px;"><i class="fa-solid fa-arrow-trend-up"></i> Clientes al día</p>
+                    <p style="font-size: 0.75rem; color: #10B981; margin-top: 5px;">Clientes al día</p>
                 </div>
                 <div class="kpi-card kpi-card--danger">
                     <span class="kpi-card__title">Pagos Pendientes</span>
                     <h2 class="kpi-card__value" id="rep-pendiente">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;"><i class="fa-solid fa-circle-exclamation"></i> Dinero en la calle</p>
+                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;">Dinero en la calle</p>
+                </div>
+                
+                <!-- ESTAS SON LAS DOS CAJAS NUEVAS -->
+                <div class="kpi-card" style="border-top-color: #F59E0B;">
+                    <span class="kpi-card__title">Pago a Proveedores</span>
+                    <h2 class="kpi-card__value" id="rep-proveedores" style="color: #F59E0B;">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Costo de Cuentas Madre</p>
+                </div>
+                <div class="kpi-card" style="border-top-color: #7D2AE8;">
+                    <span class="kpi-card__title">Ganancia Neta</span>
+                    <h2 class="kpi-card__value" id="rep-ganancia" style="color: #7D2AE8;">$0.00</h2>
+                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Tu beneficio real</p>
                 </div>
             </section>
 
@@ -445,10 +467,38 @@
             <i class="fa-solid fa-chart-line icon"></i>
             <span class="text">Finanzas</span>
         </a>
+        <a href="#" class="nav-item" data-vista="configuracion">
+        <i class="fa-solid fa-gear icon"></i>
+        <span class="text">Ajustes</span>
+    </a>
     </nav>
     
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="script.js" charset="UTF-8"></script>
+    <!-- VISTA CONFIGURACIÓN -->
+    <!-- VISTA CONFIGURACIÓN -->
+    <div id="vista-configuracion" class="vista-seccion vista-oculta">
+        <div class="top-section" style="text-align: center; margin-bottom: 30px;">
+            <h1>Ajustes de Costos</h1>
+            <p class="subtitle">Configura cuánto pagas al proveedor por cada Cuenta Madre</p>
+        </div>
+        
+        <!-- Aquí está la clave: limitamos el tamaño de la tarjeta blanca y la centramos -->
+        <div class="plat-card" style="max-width: 850px; margin: 0 auto; padding: 30px;">
+            <div id="contenedor-costos" class="form-grid">
+                <!-- Se generan desde JavaScript -->
+            </div>
+            <button id="btn-guardar-costos" class="btn-primario btn-full-mt" style="margin-top: 25px; padding: 15px; font-size: 1rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Costos
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    
+    <div id="toast-container" class="toast-container"></div>
+    <script src="script.js"></script>
 </body>
 </html>

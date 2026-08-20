@@ -1,5 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // ==========================================
+    // 1. INICIALIZACIÓN DE FIREBASE
+    // ==========================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyD88uuqPYel-IcCqN_ytZx9xbJ2RG7WkQM",
+        authDomain: "streaming-mundial.firebaseapp.com",
+        projectId: "streaming-mundial",
+        storageBucket: "streaming-mundial.firebasestorage.app",
+        messagingSenderId: "286156726345",
+        appId: "1:286156726345:web:3306c87cba9ecfb7395f98"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const db = firebase.firestore();
+
+    // Estado global en memoria
+    let cuentas = [];
+    let clientes = [];
+    let historialPagos = [];
+    let costosProveedores = {};
+
+    // ==========================================
+    // 2. SISTEMA DE NOTIFICACIONES (TOAST)
+    // ==========================================
     const mostrarNotificacion = (mensaje, tipo = 'success') => {
         const container = document.getElementById('toast-container');
         if (!container) return;
@@ -17,11 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleModal = (modalId, show) => {
         const modal = document.getElementById(modalId);
         if (modal) {
-            if(show) modal.classList.remove('modal-oculto'); 
+            if (show) modal.classList.remove('modal-oculto'); 
             else modal.classList.add('modal-oculto'); 
         }
     };
 
+    // ==========================================
+    // 3. NAVEGACIÓN ENTRE VISTAS (SPA)
+    // ==========================================
     const navItems = document.querySelectorAll('.nav-item');
     const vistas = document.querySelectorAll('.vista-seccion');
 
@@ -43,30 +72,64 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    let cuentas = JSON.parse(localStorage.getItem('streaming_cuentas')) || [];
-    let clientes = JSON.parse(localStorage.getItem('streaming_clientes')) || [];
-    let historialPagos = JSON.parse(localStorage.getItem('streaming_historial_pagos')) || [];
+    // ==========================================
+    // 4. SINCRONIZACIÓN CON FIREBASE (NUBE)
+    // ==========================================
+    const guardarNube = () => {
+        db.collection('sistema').doc('datosPrincipales').set({
+            cuentas: cuentas,
+            clientes: clientes,
+            historialPagos: historialPagos,
+            costosProveedores: costosProveedores
+        }).catch(error => {
+            console.error("Error al guardar en Firebase:", error);
+            mostrarNotificacion("Error de conexión con la base de datos", "info");
+        });
+    };
 
-    // ================== NUEVO: REGISTRAR EN EL HISTORIAL ==================
+    const escucharNubeEnTiempoReal = () => {
+        db.collection('sistema').doc('datosPrincipales').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                cuentas = data.cuentas || [];
+                clientes = data.clientes || [];
+                historialPagos = data.historialPagos || [];
+                costosProveedores = data.costosProveedores || {};
+            }
+            actualizarDashboard();
+            renderizarCuentas();
+            renderizarClientes('todos');
+            renderizarVistaCostos();
+        }, (error) => {
+            console.error("Error al escuchar Firebase:", error);
+        });
+    };
+
+    // ==========================================
+    // 5. REGISTRO EN HISTORIAL CONTABLE
+    // ==========================================
     const registrarTransaccionHistorial = (monto, plataforma, clienteId) => {
         const fechaActual = new Date();
         const mesStr = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`;
         
         historialPagos.push({
             id: Date.now(),
-            clienteId: clienteId, // <-- Vinculamos el pago a este cliente
+            clienteId: clienteId,
             monto: parseFloat(monto) || 0,
             plataforma: plataforma,
             fecha: fechaActual.getTime(),
             mes: mesStr
         });
-        localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
+        guardarNube();
     };
 
+    // ==========================================
+    // 6. VERIFICACIÓN DE VENCIMIENTOS
+    // ==========================================
     const verificarVencimientosClientes = () => {
-        const ahora = new Date();
-        const hoyInicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
-        const hoyFin = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999).getTime();
+        const hoy = new Date();
+        const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+        const hoyFin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999).getTime();
 
         let actualizado = false;
         clientes.forEach(c => {
@@ -79,13 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 actualizado = true;
             }
         });
-        if (actualizado) localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
+        if (actualizado) guardarNube();
     };
-    
+
+    // ==========================================
+    // 7. RENDERIZADO DE TARJETAS DE CLIENTE
+    // ==========================================
     const generarHTMLTarjetaCliente = (c) => {
         const esMoroso = c.estado === 'moroso';
         const esHoy = c.estado === 'vence-hoy';
-        const iniciales = c.nombre.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+        const iniciales = c.nombre ? c.nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'CL';
 
         let bgGradient = 'gradient-aldia';
         let badgeTexto = 'Al Día';
@@ -99,19 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let icon = 'fa-solid fa-play'; let col = '#E50914';
-        if(c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
-        if(c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
-        if(c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; col = '#113CCF'; }
-        if(c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; col = '#F47521'; }
-        if(c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
-        if(c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
-        if(c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
+        if (c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
+        else if (c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
+        else if (c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; col = '#113CCF'; }
+        else if (c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; col = '#F47521'; }
+        else if (c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
+        else if (c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
+        else if (c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
 
         let fechaTexto = 'Sin Fecha';
         if (c.fechaVencimiento) {
             const f = new Date(c.fechaVencimiento);
             fechaTexto = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
         }
+
+        const correoAMostrar = c.servicioPlataforma === 'Spotify' && c.correoPersonal ? c.correoPersonal : c.servicioCorreo;
 
         return `
             <div class="cliente-card ${bgGradient}">
@@ -131,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="${icon}" style="color: ${col};"></i>
                         <div class="servicio-detalles">
                             <p class="serv-nom">${c.servicioPlataforma} (${c.servicioDetalle}) - <strong style="color: #10B981;">$${parseFloat(c.montoPago || 0).toFixed(2)}</strong></p>
-                            <p class="serv-mail" style="margin-bottom: 4px;">${c.servicioCorreo}</p>
+                            <p class="serv-mail" style="margin-bottom: 4px;">${correoAMostrar}</p>
                             <p class="serv-mail" style="font-weight: 700;">
                                 <i class="fa-regular fa-calendar" style="color: ${esMoroso ? '#EF4444' : '#6B7280'}; font-size: 0.8rem; margin-right: 3px;"></i> 
                                 Vence: <span style="color: ${esMoroso ? '#EF4444' : '#1F2937'};">${fechaTexto}</span>
@@ -151,6 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
+    // ==========================================
+    // 8. ACTUALIZACIÓN DEL DASHBOARD Y KPIS
+    // ==========================================
     const actualizarDashboard = () => {
         verificarVencimientosClientes();
 
@@ -186,19 +257,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ==========================================
+    // 9. REPORTES FINANCIEROS Y COSTOS
+    // ==========================================
     const renderizarReportesFinancieros = (totalEsperado) => {
         const totalCobrado = clientes.filter(c => c.estado === 'aldia').reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
         const totalPendiente = totalEsperado - totalCobrado;
 
+        // Cálculo de Pago a Proveedores según Cuentas Madre activas
+        let totalPagoProveedores = 0;
+        cuentas.forEach(cuenta => {
+            const costo = costosProveedores[cuenta.plataforma] || 0;
+            totalPagoProveedores += costo;
+        });
+
+        const gananciaNeta = totalCobrado - totalPagoProveedores;
+
         const repEsperado = document.getElementById('rep-esperado');
         const repCobrado = document.getElementById('rep-cobrado');
         const repPendiente = document.getElementById('rep-pendiente');
+        const repProveedores = document.getElementById('rep-proveedores');
+        const repGanancia = document.getElementById('rep-ganancia');
 
-        if(repEsperado) repEsperado.textContent = `$${totalEsperado.toFixed(2)}`;
-        if(repCobrado) repCobrado.textContent = `$${totalCobrado.toFixed(2)}`;
-        if(repPendiente) repPendiente.textContent = `$${totalPendiente.toFixed(2)}`;
+        if (repEsperado) repEsperado.textContent = `$${totalEsperado.toFixed(2)}`;
+        if (repCobrado) repCobrado.textContent = `$${totalCobrado.toFixed(2)}`;
+        if (repPendiente) repPendiente.textContent = `$${totalPendiente.toFixed(2)}`;
+        if (repProveedores) repProveedores.textContent = `$${totalPagoProveedores.toFixed(2)}`;
+        if (repGanancia) repGanancia.textContent = `$${gananciaNeta.toFixed(2)}`;
 
-        // RENDERIZAR HISTORIAL DE MESES
+        // HISTORIAL POR MESES
         const contHistorial = document.getElementById('contenedor-historial-meses');
         if (contHistorial) {
             const agrupadoMeses = historialPagos.reduce((acc, pago) => {
@@ -234,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
             contHistorial.innerHTML = htmlHistorial;
         }
 
-        // RENDERIZAR DESGLOSE DE PLATAFORMAS
+        // DESGLOSE POR PLATAFORMA
         const contReportesPlat = document.getElementById('contenedor-reporte-plataformas');
         if (contReportesPlat) {
             contReportesPlat.innerHTML = '';
@@ -281,6 +368,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // ==========================================
+    // 10. SERVICIOS ACTIVOS EN INICIO
+    // ==========================================
     const contenedorPlataformas = document.getElementById('contenedor-plataformas');
     const renderizarDashboardServicios = () => {
         if (!contenedorPlataformas) return;
@@ -320,8 +410,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // ==========================================
+    // 11. GESTIÓN DE CUENTAS MADRE
+    // ==========================================
     const guardarYRenderizarCuentas = () => {
-        localStorage.setItem('streaming_cuentas', JSON.stringify(cuentas));
+        guardarNube();
         const filtroActivo = document.querySelector('#vista-cuentas .btn-filtro.active');
         const textoFiltro = filtroActivo && filtroActivo.getAttribute('data-filtro') !== 'Todas' ? filtroActivo.getAttribute('data-filtro') : '';
         renderizarCuentas(textoFiltro);
@@ -389,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Agregar Cuenta Madre
     const modalAgregarId = 'modal-agregar-cuenta';
     const formAgregarCuenta = document.getElementById('form-agregar-cuenta');
     document.getElementById('btn-agregar-cuenta')?.addEventListener('click', () => toggleModal(modalAgregarId, true));
@@ -429,6 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Eliminar Cuenta Madre
     let cuentaAEliminar = null;
     const modalEliminarId = 'modal-eliminar';
     window.abrirModalEliminar = function(id) { cuentaAEliminar = id; toggleModal(modalEliminarId, true); };
@@ -442,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Subcuentas (Perfiles)
     let cuentaEnEdicionId = null;
     const modalSubId = 'modal-subcuentas';
     document.getElementById('cerrar-modal-sub')?.addEventListener('click', () => toggleModal(modalSubId, false));
@@ -508,257 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarNotificacion('Perfiles actualizados', 'success');
     });
 
-    const guardarYRenderizarClientes = () => {
-        localStorage.setItem('streaming_clientes', JSON.stringify(clientes));
-        const filtroActivo = document.querySelector('#vista-clientes .btn-filtro.active');
-        const filtroVal = filtroActivo ? filtroActivo.getAttribute('data-filtro') : 'todos';
-        renderizarClientes(filtroVal);
-        actualizarDashboard();
-    };
-
-    const renderizarClientes = (filtroEstado = 'todos') => {
-        verificarVencimientosClientes();
-        const grid = document.querySelector('#vista-clientes .grid-clientes'); 
-        if (!grid) return;
-        
-        const textoBusqueda = (document.getElementById('buscador-clientes')?.value || '').toLowerCase();
-        
-        let filtrados = clientes.filter(c => {
-            const coincideBusqueda = c.nombre.toLowerCase().includes(textoBusqueda) || c.servicioCorreo.toLowerCase().includes(textoBusqueda);
-            const coincideEstado = filtroEstado === 'todos' || 
-                                  (filtroEstado === 'aldia' && c.estado === 'aldia') || 
-                                  (filtroEstado === 'vencidos' && (c.estado === 'moroso' || c.estado === 'vence-hoy'));
-            return coincideBusqueda && coincideEstado;
-        });
-
-        if (filtrados.length === 0) {
-            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No se encontraron clientes registrados.</p>`;
-            return;
-        }
-        
-        grid.innerHTML = filtrados.map(c => generarHTMLTarjetaCliente(c)).join('');
-    };
-
-    const inputBuscadorClientes = document.getElementById('buscador-clientes');
-    const botonesFiltroClientes = document.querySelectorAll('#vista-clientes .btn-filtro');
-    if (inputBuscadorClientes) {
-        inputBuscadorClientes.addEventListener('input', () => {
-            const activo = document.querySelector('#vista-clientes .btn-filtro.active');
-            renderizarClientes(activo ? activo.getAttribute('data-filtro') : 'todos');
-        });
-    }
-    botonesFiltroClientes.forEach(boton => {
-        boton.addEventListener('click', () => {
-            botonesFiltroClientes.forEach(b => b.classList.remove('active'));
-            boton.classList.add('active');
-            if(inputBuscadorClientes) inputBuscadorClientes.value = '';
-            renderizarClientes(boton.getAttribute('data-filtro'));
-        });
-    });
-
-    const modalClienteId = 'modal-cliente';
-    const selectPlataforma = document.getElementById('cliente-plataforma');
-    const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
-    const inputContrasena = document.getElementById('cliente-contrasena');
-    const inputCorreoBase = document.getElementById('cliente-correo');
-
-    if(selectPlataforma) {
-        selectPlataforma.addEventListener('change', (e) => {
-            if(e.target.value === 'Spotify') {
-                if(grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'flex';
-                if(inputContrasena) inputContrasena.placeholder = 'Contraseña Admin (Opcional)';
-                if(inputCorreoBase) inputCorreoBase.placeholder = 'Correo Admin / Cuenta Madre';
-            } else {
-                if(grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
-                if(inputContrasena) inputContrasena.placeholder = 'Contraseña o PIN del perfil';
-                if(inputCorreoBase) inputCorreoBase.placeholder = 'correo.vinculado@gmail.com';
-            }
-        });
-    }
-    const formCliente = document.getElementById('form-cliente');
-    
-    document.getElementById('btn-agregar-cliente')?.addEventListener('click', () => {
-        if(formCliente) formCliente.reset();
-        document.getElementById('cliente-id').value = '';
-        document.getElementById('titulo-modal-cliente').textContent = 'Agregar Cliente';
-        
-        const defaultDate = new Date();
-        defaultDate.setDate(defaultDate.getDate() + 28);
-        const yyyy = defaultDate.getFullYear();
-        const mm = String(defaultDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(defaultDate.getDate()).padStart(2, '0');
-        document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
-
-        toggleModal(modalClienteId, true);
-    });
-
-    document.getElementById('cerrar-modal-cliente')?.addEventListener('click', () => toggleModal(modalClienteId, false));
-
-    window.abrirModalCliente = function(id) {
-        const cliente = clientes.find(c => c.id === id);
-        if (!cliente) return;
-        
-        document.getElementById('cliente-id').value = cliente.id;
-        document.getElementById('cliente-nombre').value = cliente.nombre;
-        document.getElementById('cliente-estado').value = (cliente.estado === 'moroso' || cliente.estado === 'vence-hoy') ? 'moroso' : 'aldia';
-        document.getElementById('cliente-monto').value = cliente.montoPago || '';
-        document.getElementById('cliente-plataforma').value = cliente.servicioPlataforma;
-        document.getElementById('cliente-detalle').value = cliente.servicioDetalle;
-        document.getElementById('cliente-correo').value = cliente.servicioCorreo;
-        
-        document.getElementById('cliente-telefono').value = cliente.telefono || '';
-        document.getElementById('cliente-metodo-pago').value = cliente.metodoPago || 'Binance';
-        document.getElementById('cliente-contrasena').value = cliente.contrasena || '';
-
-        const inputPersonal = document.getElementById('cliente-correo-personal');
-        if(inputPersonal) inputPersonal.value = cliente.correoPersonal || '';
-        document.getElementById('cliente-plataforma').dispatchEvent(new Event('change'));
-        
-        if (cliente.fechaVencimiento) {
-            const fd = new Date(cliente.fechaVencimiento);
-            const yyyy = fd.getFullYear();
-            const mm = String(fd.getMonth() + 1).padStart(2, '0');
-            const dd = String(fd.getDate()).padStart(2, '0');
-            document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
-        }
-
-        document.getElementById('titulo-modal-cliente').textContent = 'Editar Cliente';
-        toggleModal(modalClienteId, true);
-    };
-
-    if (formCliente) {
-        formCliente.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const idForm = document.getElementById('cliente-id').value;
-            const fechaInput = document.getElementById('cliente-fecha-vencimiento').value;
-            const [year, month, day] = fechaInput.split('-');
-            const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
-
-            const telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
-            const metodoPago = document.getElementById('cliente-metodo-pago').value;
-            const contrasena = document.getElementById('cliente-contrasena').value.trim();
-
-            const inputPersonal = document.getElementById('cliente-correo-personal');
-            const correoPersonal = inputPersonal && inputPersonal.parentElement.style.display !== 'none' ? inputPersonal.value.trim() : '';
-
-            const datosCliente = {
-                id: idForm ? parseInt(idForm) : Date.now(),
-                nombre: document.getElementById('cliente-nombre').value.trim(),
-                estado: 'aldia', 
-                montoPago: parseFloat(document.getElementById('cliente-monto').value) || 0,
-                servicioPlataforma: document.getElementById('cliente-plataforma').value,
-                servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
-                servicioCorreo: document.getElementById('cliente-correo').value.trim(),
-                correoPersonal: correoPersonal, // Se guarda el correo personal
-                fechaVencimiento: fechaManual,
-                telefono: telefono,
-                metodoPago: metodoPago,
-                contrasena: contrasena,
-                estadoAviso: idForm ? (clientes.find(c => c.id === parseInt(idForm))?.estadoAviso || 'pendiente') : 'pendiente'
-            };
-
-            if (idForm) {
-                const index = clientes.findIndex(c => c.id === parseInt(idForm));
-                if(index > -1) { clientes[index] = datosCliente; }
-                
-                // NUEVO: Si editaste un cliente, corregir su monto y plataforma en el historial
-                historialPagos.forEach(pago => {
-                    if (pago.clienteId === parseInt(idForm)) {
-                        pago.monto = datosCliente.montoPago;
-                        pago.plataforma = datosCliente.servicioPlataforma;
-                    }
-                });
-                localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
-
-            } else {
-                clientes.push(datosCliente);
-                // NUEVO: Enviamos el ID al crear un cliente
-                registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma, datosCliente.id);
-            }
-
-            guardarYRenderizarClientes();
-            toggleModal(modalClienteId, false);
-            mostrarNotificacion('¡Cliente guardado! Abriendo WhatsApp...', 'success');
-
-            const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            let mensajeWa = '';
-
-            // Construcción del mensaje con acentos y emojis blindados (Unicode)
-            if (datosCliente.servicioPlataforma === 'Spotify') {
-                // Mensaje Especial Spotify
-                mensajeWa = `\u00A1Hola ${datosCliente.nombre}! \uD83D\uDC4B\n\nAqu\u00ED tienes los detalles de tu cuenta de *Spotify*:\n\n\uD83D\uDCE7 *Tu Correo (Invitaci\u00F3n):* ${datosCliente.correoPersonal}\n\uD83C\uDFB5 *Plan:* ${datosCliente.servicioDetalle}\n\n\uD83D\uDDD3\uFE0F *Tu cuenta vence el:* ${fechaFormateada}\n\n\u00A1Gracias por tu compra! Disfruta tu m\u00FAsica. \uD83C\uDFA7`;
-            } else {
-                // Mensaje General (Netflix, Max, Disney, etc)
-                mensajeWa = `\u00A1Hola ${datosCliente.nombre}! \uD83D\uDC4B\n\nAqu\u00ED tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n\uD83D\uDCE7 *Correo:* ${datosCliente.servicioCorreo}\n\uD83D\uDD11 *Contrase\u00F1a/PIN:* ${datosCliente.contrasena}\n\uD83D\uDCFA *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n\uD83D\uDDD3\uFE0F *Tu cuenta vence el:* ${fechaFormateada}\n\n\u00A1Gracias por tu compra! Disfruta tu contenido. \uD83C\uDF7F`;
-            }
-            
-           const urlWa = `https://api.whatsapp.com/send?phone=${datosCliente.telefono}&text=${encodeURIComponent(mensajeWa)}`;
-            window.open(urlWa, '_blank');
-        });
-    }
-
-    let clienteAEliminarId = null;
-    const modalEliminarClienteId = 'modal-eliminar-cliente';
-    window.eliminarCliente = function(id) { clienteAEliminarId = id; toggleModal(modalEliminarClienteId, true); };
-    document.getElementById('btn-cancelar-eliminar-cliente')?.addEventListener('click', () => { toggleModal(modalEliminarClienteId, false); clienteAEliminarId = null; });
-    document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
-        if (clienteAEliminarId !== null) {
-            clientes = clientes.filter(c => c.id !== clienteAEliminarId);
-            
-            // NUEVO: Borrar también sus pagos del historial
-            historialPagos = historialPagos.filter(pago => pago.clienteId !== clienteAEliminarId);
-            localStorage.setItem('streaming_historial_pagos', JSON.stringify(historialPagos));
-
-            guardarYRenderizarClientes();
-            toggleModal(modalEliminarClienteId, false);
-            clienteAEliminarId = null;
-            mostrarNotificacion('Cliente eliminado', 'info');
-        }
-    });
-
-    let clientePagoId = null;
-    const modalPagoId = 'modal-pago';
-    window.abrirModalPago = function(id) { clientePagoId = id; toggleModal(modalPagoId, true); };
-    document.getElementById('btn-cancelar-pago')?.addEventListener('click', () => { toggleModal(modalPagoId, false); clientePagoId = null; });
-
-    document.getElementById('btn-confirmar-pago')?.addEventListener('click', () => {
-        if(clientePagoId) {
-            const index = clientes.findIndex(c => c.id === clientePagoId);
-            if(index > -1) {
-                let baseDate = new Date();
-                if (clientes[index].fechaVencimiento > Date.now()) baseDate = new Date(clientes[index].fechaVencimiento);
-                baseDate.setDate(baseDate.getDate() + 28);
-                
-                clientes[index].estado = 'aldia';
-                clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
-                
-                // ES UNA RENOVACIÓN. Registramos el pago en el historial
-                registrarTransaccionHistorial(clientes[index].montoPago, clientes[index].servicioPlataforma, clientes[index].id);
-                
-                guardarYRenderizarClientes();
-            }
-            toggleModal(modalPagoId, false);
-            clientePagoId = null;
-            mostrarNotificacion('¡Pago registrado con éxito en el historial!');
-        }
-    });
-
-    window.enviarRecordatorio = function(id) {
-        const index = clientes.findIndex(c => c.id === id);
-        if (index > -1) {
-            const c = clientes[index];
-            const estaMoroso = c.estado === 'moroso';
-            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos!`;
-            
-            clientes[index].estadoAviso = 'avisado';
-            guardarYRenderizarClientes();
-            
-            const urlWa = `https://wa.me/${c.telefono}?text=${encodeURIComponent(mensaje)}`;
-            window.open(urlWa, '_blank');
-            mostrarNotificacion('Recordatorio enviado', 'info');
-        }
-    };
-
+    // Editar Correo de Cuenta Madre
     const modalEditarCuentaId = 'modal-editar-cuenta';
     const formEditarCuenta = document.getElementById('form-editar-cuenta');
     document.getElementById('cerrar-modal-editar-cuenta')?.addEventListener('click', () => toggleModal(modalEditarCuentaId, false));
@@ -802,11 +648,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.abrirModalNotificacionMasiva = function(clientesAfectados, plataforma, nuevoCorreo) {
         const contenedor = document.getElementById('lista-clientes-notificar');
+        if (!contenedor) return;
         contenedor.innerHTML = '';
         
         clientesAfectados.forEach(c => {
-            const mensaje = `¡Hola ${c.nombre}! 👋\n\nTe informamos que por motivos de mantenimiento hemos actualizado el correo de acceso para tu cuenta de *${plataforma}*.\n\n📧 *Nuevo Correo:* ${nuevoCorreo}\n🔑 *Contraseña/PIN:* ${c.contrasena || 'La misma que ya tenías'}\n📺 *Perfil:* ${c.servicioDetalle}\n\nPor favor, utiliza este nuevo correo para iniciar sesión a partir de ahora. ¡Gracias por tu comprensión!`;
-            const urlWa = `https://wa.me/${c.telefono}?text=${encodeURIComponent(mensaje)}`;
+            const mensaje = `Hola ${c.nombre}!\n\nTe informamos que por motivos de mantenimiento hemos actualizado el correo de acceso para tu cuenta de *${plataforma}*:\n\n• *Nuevo Correo:* ${nuevoCorreo}\n• *Contraseña/PIN:* ${c.contrasena || 'La misma que ya tenías'}\n• *Perfil:* ${c.servicioDetalle}\n\nPor favor, utiliza este nuevo correo para iniciar sesión a partir de ahora. ¡Gracias por tu comprensión!`;
+            const urlWa = `https://api.whatsapp.com/send?phone=${c.telefono}&text=${encodeURIComponent(mensaje)}`;
             
             const item = document.createElement('div');
             item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #F9FAFB; padding: 12px; border-radius: 10px; border: 1px solid #E5E7EB;';
@@ -824,7 +671,340 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleModal(modalNotificacionId, true);
     };
 
-    actualizarDashboard();
-    renderizarCuentas();
-    renderizarClientes('todos');
+    // ==========================================
+    // 12. GESTIÓN DE CLIENTES
+    // ==========================================
+    const guardarYRenderizarClientes = () => {
+        guardarNube();
+        const filtroActivo = document.querySelector('#vista-clientes .btn-filtro.active');
+        const filtroVal = filtroActivo ? filtroActivo.getAttribute('data-filtro') : 'todos';
+        renderizarClientes(filtroVal);
+        actualizarDashboard();
+    };
+
+    const renderizarClientes = (filtroEstado = 'todos') => {
+        verificarVencimientosClientes();
+        const grid = document.querySelector('#vista-clientes .grid-clientes'); 
+        if (!grid) return;
+        
+        const textoBusqueda = (document.getElementById('buscador-clientes')?.value || '').toLowerCase();
+        
+        let filtrados = clientes.filter(c => {
+            const coincideBusqueda = c.nombre.toLowerCase().includes(textoBusqueda) || 
+                                     c.servicioCorreo.toLowerCase().includes(textoBusqueda) ||
+                                     (c.correoPersonal && c.correoPersonal.toLowerCase().includes(textoBusqueda));
+            const coincideEstado = filtroEstado === 'todos' || 
+                                  (filtroEstado === 'aldia' && c.estado === 'aldia') || 
+                                  (filtroEstado === 'vencidos' && (c.estado === 'moroso' || c.estado === 'vence-hoy'));
+            return coincideBusqueda && coincideEstado;
+        });
+
+        if (filtrados.length === 0) {
+            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No se encontraron clientes registrados.</p>`;
+            return;
+        }
+        
+        grid.innerHTML = filtrados.map(c => generarHTMLTarjetaCliente(c)).join('');
+    };
+
+    const inputBuscadorClientes = document.getElementById('buscador-clientes');
+    const botonesFiltroClientes = document.querySelectorAll('#vista-clientes .btn-filtro');
+    if (inputBuscadorClientes) {
+        inputBuscadorClientes.addEventListener('input', () => {
+            const activo = document.querySelector('#vista-clientes .btn-filtro.active');
+            renderizarClientes(activo ? activo.getAttribute('data-filtro') : 'todos');
+        });
+    }
+    botonesFiltroClientes.forEach(boton => {
+        boton.addEventListener('click', () => {
+            botonesFiltroClientes.forEach(b => b.classList.remove('active'));
+            boton.classList.add('active');
+            if (inputBuscadorClientes) inputBuscadorClientes.value = '';
+            renderizarClientes(boton.getAttribute('data-filtro'));
+        });
+    });
+
+    // LÓGICA DINÁMICA DE PLATAFORMA (SPOTIFY, CANVA, CAPCUT NO PIDEN CONTRASEÑA)
+    const selectPlataforma = document.getElementById('cliente-plataforma');
+    const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
+    const inputContrasena = document.getElementById('cliente-contrasena');
+    const inputCorreoBase = document.getElementById('cliente-correo');
+
+    const adaptarFormularioSegunPlataforma = (platVal) => {
+        if (!inputContrasena || !inputCorreoBase) return;
+
+        if (platVal === 'Spotify') {
+            if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'flex';
+            inputContrasena.required = false;
+            inputContrasena.placeholder = 'No requiere contraseña (Invitación)';
+            inputCorreoBase.placeholder = 'Correo Admin / Cuenta Madre';
+        } else if (platVal === 'Canva' || platVal === 'CapCut') {
+            if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
+            inputContrasena.required = false;
+            inputContrasena.placeholder = 'No requiere contraseña (Invitación por correo)';
+            inputCorreoBase.placeholder = 'Correo personal o vinculado del cliente';
+        } else {
+            if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
+            inputContrasena.required = true;
+            inputContrasena.placeholder = 'Contraseña o PIN del perfil';
+            inputCorreoBase.placeholder = 'correo.vinculado@gmail.com';
+        }
+    };
+
+    if (selectPlataforma) {
+        selectPlataforma.addEventListener('change', (e) => {
+            adaptarFormularioSegunPlataforma(e.target.value);
+        });
+    }
+
+    // Modal Cliente: Abrir para Crear
+    const modalClienteId = 'modal-cliente';
+    const formCliente = document.getElementById('form-cliente');
+    
+    document.getElementById('btn-agregar-cliente')?.addEventListener('click', () => {
+        if (formCliente) formCliente.reset();
+        document.getElementById('cliente-id').value = '';
+        document.getElementById('titulo-modal-cliente').textContent = 'Agregar Cliente';
+        
+        const defaultDate = new Date();
+        defaultDate.setDate(defaultDate.getDate() + 28);
+        const yyyy = defaultDate.getFullYear();
+        const mm = String(defaultDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(defaultDate.getDate()).padStart(2, '0');
+        document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
+
+        if (selectPlataforma) adaptarFormularioSegunPlataforma(selectPlataforma.value);
+        toggleModal(modalClienteId, true);
+    });
+
+    document.getElementById('cerrar-modal-cliente')?.addEventListener('click', () => toggleModal(modalClienteId, false));
+
+    // Modal Cliente: Abrir para Editar
+    window.abrirModalCliente = function(id) {
+        const cliente = clientes.find(c => c.id === id);
+        if (!cliente) return;
+        
+        document.getElementById('cliente-id').value = cliente.id;
+        document.getElementById('cliente-nombre').value = cliente.nombre;
+        document.getElementById('cliente-estado').value = (cliente.estado === 'moroso' || cliente.estado === 'vence-hoy') ? 'moroso' : 'aldia';
+        document.getElementById('cliente-monto').value = cliente.montoPago || '';
+        document.getElementById('cliente-plataforma').value = cliente.servicioPlataforma;
+        document.getElementById('cliente-detalle').value = cliente.servicioDetalle;
+        document.getElementById('cliente-correo').value = cliente.servicioCorreo;
+        
+        document.getElementById('cliente-telefono').value = cliente.telefono || '';
+        document.getElementById('cliente-metodo-pago').value = cliente.metodoPago || 'Binance';
+        document.getElementById('cliente-contrasena').value = cliente.contrasena || '';
+        
+        const inputPersonal = document.getElementById('cliente-correo-personal');
+        if (inputPersonal) inputPersonal.value = cliente.correoPersonal || '';
+
+        adaptarFormularioSegunPlataforma(cliente.servicioPlataforma);
+
+        if (cliente.fechaVencimiento) {
+            const fd = new Date(cliente.fechaVencimiento);
+            const yyyy = fd.getFullYear();
+            const mm = String(fd.getMonth() + 1).padStart(2, '0');
+            const dd = String(fd.getDate()).padStart(2, '0');
+            document.getElementById('cliente-fecha-vencimiento').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        document.getElementById('titulo-modal-cliente').textContent = 'Editar Cliente';
+        toggleModal(modalClienteId, true);
+    };
+
+    // Guardar Cliente (Nuevo o Edición)
+    if (formCliente) {
+        formCliente.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const idForm = document.getElementById('cliente-id').value;
+            const fechaInput = document.getElementById('cliente-fecha-vencimiento').value;
+            const [year, month, day] = fechaInput.split('-');
+            const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
+
+            const telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
+            const metodoPago = document.getElementById('cliente-metodo-pago').value;
+            const contrasena = document.getElementById('cliente-contrasena').value.trim();
+            const plataforma = document.getElementById('cliente-plataforma').value;
+
+            const inputPersonal = document.getElementById('cliente-correo-personal');
+            const correoPersonal = (plataforma === 'Spotify' && inputPersonal) ? inputPersonal.value.trim() : '';
+
+            const datosCliente = {
+                id: idForm ? parseInt(idForm) : Date.now(),
+                nombre: document.getElementById('cliente-nombre').value.trim(),
+                estado: 'aldia', 
+                montoPago: parseFloat(document.getElementById('cliente-monto').value) || 0,
+                servicioPlataforma: plataforma,
+                servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
+                servicioCorreo: document.getElementById('cliente-correo').value.trim(),
+                correoPersonal: correoPersonal,
+                fechaVencimiento: fechaManual,
+                telefono: telefono,
+                metodoPago: metodoPago,
+                contrasena: contrasena,
+                estadoAviso: idForm ? (clientes.find(c => c.id === parseInt(idForm))?.estadoAviso || 'pendiente') : 'pendiente'
+            };
+
+            if (idForm) {
+                const index = clientes.findIndex(c => c.id === parseInt(idForm));
+                if (index > -1) { clientes[index] = datosCliente; }
+                
+                // Actualizar en el historial si cambió el precio o la plataforma
+                historialPagos.forEach(pago => {
+                    if (pago.clienteId === parseInt(idForm)) {
+                        pago.monto = datosCliente.montoPago;
+                        pago.plataforma = datosCliente.servicioPlataforma;
+                    }
+                });
+            } else {
+                clientes.push(datosCliente);
+                registrarTransaccionHistorial(datosCliente.montoPago, datosCliente.servicioPlataforma, datosCliente.id);
+            }
+
+            guardarYRenderizarClientes();
+            toggleModal(modalClienteId, false);
+            mostrarNotificacion('¡Cliente guardado! Abriendo WhatsApp...', 'success');
+
+            const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            let mensajeWa = '';
+
+            // Mensajes formateados con viñetas según la plataforma
+            if (plataforma === 'Spotify') {
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
+            } else if (plataforma === 'Canva' || plataforma === 'CapCut') {
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu acceso a *${plataforma}*:\n\n• *Correo de Invitación:* ${datosCliente.servicioCorreo}\n• *Plan/Equipo:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu plataforma.`;
+            } else {
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n• *Correo:* ${datosCliente.servicioCorreo}\n• *Contraseña/PIN:* ${datosCliente.contrasena}\n• *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido.`;
+            }
+            
+            const urlWa = `https://api.whatsapp.com/send?phone=${datosCliente.telefono}&text=${encodeURIComponent(mensajeWa)}`;
+            window.open(urlWa, '_blank');
+        });
+    }
+
+    // Eliminar Cliente
+    let clienteAEliminarId = null;
+    const modalEliminarClienteId = 'modal-eliminar-cliente';
+    window.eliminarCliente = function(id) { clienteAEliminarId = id; toggleModal(modalEliminarClienteId, true); };
+    document.getElementById('btn-cancelar-eliminar-cliente')?.addEventListener('click', () => { toggleModal(modalEliminarClienteId, false); clienteAEliminarId = null; });
+    document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
+        if (clienteAEliminarId !== null) {
+            clientes = clientes.filter(c => c.id !== clienteAEliminarId);
+            
+            // Eliminar sus pagos vinculados del historial
+            historialPagos = historialPagos.filter(pago => pago.clienteId !== clienteAEliminarId);
+
+            guardarYRenderizarClientes();
+            toggleModal(modalEliminarClienteId, false);
+            clienteAEliminarId = null;
+            mostrarNotificacion('Cliente eliminado', 'info');
+        }
+    });
+
+    // Renovar Pago de Cliente
+    let clientePagoId = null;
+    const modalPagoId = 'modal-pago';
+    window.abrirModalPago = function(id) { clientePagoId = id; toggleModal(modalPagoId, true); };
+    document.getElementById('btn-cancelar-pago')?.addEventListener('click', () => { toggleModal(modalPagoId, false); clientePagoId = null; });
+
+    document.getElementById('btn-confirmar-pago')?.addEventListener('click', () => {
+        if (clientePagoId) {
+            const index = clientes.findIndex(c => c.id === clientePagoId);
+            if (index > -1) {
+                let baseDate = new Date();
+                if (clientes[index].fechaVencimiento > Date.now()) baseDate = new Date(clientes[index].fechaVencimiento);
+                baseDate.setDate(baseDate.getDate() + 28);
+                
+                clientes[index].estado = 'aldia';
+                clientes[index].fechaVencimiento = baseDate.setHours(23, 59, 59, 999);
+                
+                registrarTransaccionHistorial(clientes[index].montoPago, clientes[index].servicioPlataforma, clientes[index].id);
+                guardarYRenderizarClientes();
+            }
+            toggleModal(modalPagoId, false);
+            clientePagoId = null;
+            mostrarNotificacion('¡Pago registrado con éxito!');
+        }
+    });
+
+    // Enviar Recordatorio
+    window.enviarRecordatorio = function(id) {
+        const index = clientes.findIndex(c => c.id === id);
+        if (index > -1) {
+            const c = clientes[index];
+            const estaMoroso = c.estado === 'moroso';
+            const mensaje = `Hola ${c.nombre}!\n\nTe escribimos de *Streaming Mundial* para recordarte que tu suscripción de *${c.servicioPlataforma}* ${estaMoroso ? 'ha vencido' : 'vence el día de hoy'}.\n\nPuedes renovar tu servicio realizando el pago de *$${parseFloat(c.montoPago).toFixed(2)}* vía *${c.metodoPago || 'tu método habitual'}*.\n\n¡Quedamos atentos para renovar tu acceso!`;
+            
+            clientes[index].estadoAviso = 'avisado';
+            guardarYRenderizarClientes();
+            
+            const urlWa = `https://api.whatsapp.com/send?phone=${c.telefono}&text=${encodeURIComponent(mensaje)}`;
+            window.open(urlWa, '_blank');
+            mostrarNotificacion('Recordatorio enviado', 'info');
+        }
+    };
+
+    // ==========================================
+    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
+    // ==========================================
+    // ==========================================
+    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
+    // ==========================================
+    // ==========================================
+    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
+    // ==========================================
+    // ==========================================
+    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
+    // ==========================================
+    const renderizarVistaCostos = () => {
+        const contenedor = document.getElementById('contenedor-costos');
+        if (!contenedor) return;
+        
+        const plataformas = ['Netflix', 'Max', 'Spotify', 'Disney+', 'Crunchyroll', 'YouTube Premium', 'Canva', 'CapCut'];
+        contenedor.innerHTML = '';
+        
+        // Como centramos la tarjeta blanca en HTML, aquí solo armamos las columnas
+        contenedor.style.display = 'grid';
+        contenedor.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
+        contenedor.style.gap = '20px';
+        
+        plataformas.forEach(plat => {
+            const costoActual = costosProveedores[plat] || 0;
+            contenedor.innerHTML += `
+                <div class="form-group" style="background: #F9FAFB; padding: 18px; border-radius: 12px; border: 1px solid #E5E7EB; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                    <label style="font-size: 0.9rem; color: #1F2937; margin-bottom: 10px; display: block; font-weight: 800; text-transform: uppercase;">${plat}</label>
+                    <div class="input-icon-wrapper">
+                        <i class="fa-solid fa-dollar-sign"></i>
+                        <input type="number" step="0.01" min="0" id="costo-${plat.replace(/\s+/g, '')}" class="input-costo" data-plat="${plat}" value="${costoActual}" style="background: #FFFFFF;">
+                    </div>
+                </div>
+            `;
+        });
+    };
+
+    document.getElementById('btn-guardar-costos')?.addEventListener('click', () => {
+        document.querySelectorAll('.input-costo').forEach(input => {
+            const plat = input.getAttribute('data-plat');
+            costosProveedores[plat] = parseFloat(input.value) || 0;
+        });
+        guardarNube();           // Lo sube a Firebase
+        actualizarDashboard();   // <--- ESTA ES LA CORRECCIÓN: Actualiza las finanzas inmediatamente
+        mostrarNotificacion('Costos guardados y calculados', 'success');
+    });
+
+    // Arrancar la escucha en tiempo real desde Firebase
+    escucharNubeEnTiempoReal();
+
+    document.getElementById('btn-guardar-costos')?.addEventListener('click', () => {
+        document.querySelectorAll('.input-costo').forEach(input => {
+            const plat = input.getAttribute('data-plat');
+            costosProveedores[plat] = parseFloat(input.value) || 0;
+        });
+        guardarNube();
+        mostrarNotificacion('Costos de proveedores guardados con éxito', 'success');
+    });
+
+    // Arrancar la escucha en tiempo real desde Firebase
+    escucharNubeEnTiempoReal();
 });
