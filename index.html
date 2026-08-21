@@ -166,6 +166,32 @@
                 </div>
             </section>
 
+            <!-- NUEVO: INGRESOS DIARIOS -->
+            <section class="diario-section" style="margin-bottom: 30px;">
+                <h3 class="section-title">Ingresos Diarios</h3>
+                <div class="plat-card">
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #E5E7EB;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="background: rgba(59, 130, 246, 0.1); padding: 12px; border-radius: 12px; color: #3B82F6; font-size: 1.2rem;">
+                                <i class="fa-solid fa-calendar-day"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.05rem; color: #1F2937;">Recaudación por Fecha</h3>
+                                <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #6B7280;">Selecciona un día para ver el total</p>
+                            </div>
+                        </div>
+                        <div class="input-icon-wrapper" style="border: 1px solid #D1D5DB; border-radius: 10px; background: #F9FAFB; max-width: 200px; width: 100%;">
+                            <i class="fa-solid fa-calendar" style="color: #6B7280;"></i>
+                            <input type="date" id="filtro-fecha-diario" style="background: transparent; color: #1F2937; padding: 10px 14px 10px 42px; border: none; outline: none; width: 100%; cursor: pointer;">
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.95rem; font-weight: 700; color: #4B5563;">Total del día:</span>
+                        <h2 id="total-diario" style="margin: 0; color: #3B82F6; font-size: 1.6rem;">$0.00</h2>
+                    </div>
+                </div>
+            </section>
+
             <!-- NUEVO: HISTORIAL POR MESES -->
             <section class="historial-section" style="margin-bottom: 30px;">
                 <h3 class="section-title">Historial de Ingresos Mensuales</h3>

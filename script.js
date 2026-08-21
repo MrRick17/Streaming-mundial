@@ -261,6 +261,42 @@ document.addEventListener('DOMContentLoaded', () => {
     // 9. REPORTES FINANCIEROS Y COSTOS
     // ==========================================
     const renderizarReportesFinancieros = (totalEsperado) => {
+        // ==========================================
+    // 9.5 CÁLCULO DE INGRESOS DIARIOS
+    // ==========================================
+    const calcularIngresoDiario = () => {
+        const inputFecha = document.getElementById('filtro-fecha-diario');
+        const totalDiarioEl = document.getElementById('total-diario');
+        
+        if (!inputFecha || !totalDiarioEl) return;
+        
+        // Si el input está vacío, le ponemos la fecha de "Hoy" automáticamente
+        if (!inputFecha.value) {
+            const hoy = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+            inputFecha.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Extraemos el día seleccionado y calculamos desde las 00:00 hasta las 23:59
+        const [year, month, day] = inputFecha.value.split('-');
+        const inicioDia = new Date(year, month - 1, day, 0, 0, 0).getTime();
+        const finDia = new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+
+        // Buscamos en el historial global los cobros que caen en ese rango de horas
+        const totalDia = historialPagos
+            .filter(pago => pago.fecha >= inicioDia && pago.fecha <= finDia)
+            .reduce((acc, pago) => acc + pago.monto, 0);
+
+        totalDiarioEl.textContent = `$${totalDia.toFixed(2)}`;
+    };
+
+    // Escuchamos si cambias la fecha en el calendario para recalcular al instante
+    const inputFechaGlobal = document.getElementById('filtro-fecha-diario');
+    if (inputFechaGlobal) {
+        inputFechaGlobal.addEventListener('change', calcularIngresoDiario);
+    }
         const totalCobrado = clientes.filter(c => c.estado === 'aldia').reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
         const totalPendiente = totalEsperado - totalCobrado;
 
@@ -366,7 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (htmlPlat === '') htmlPlat = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay ingresos activos registrados.</p>`;
             contReportesPlat.innerHTML = htmlPlat;
         }
+        // ... (al final de renderizarReportesFinancieros)
+        
+        // Actualizamos el reporte diario de paso
+        calcularIngresoDiario();
+    
     };
+
+    
 
     // ==========================================
     // 10. SERVICIOS ACTIVOS EN INICIO
@@ -871,11 +914,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Mensajes formateados con viñetas según la plataforma
             if (plataforma === 'Spotify') {
-                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
-            } else if (plataforma === 'Canva' || plataforma === 'CapCut') {
-                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu acceso a *${plataforma}*:\n\n• *Correo de Invitación:* ${datosCliente.servicioCorreo}\n• *Plan/Equipo:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu plataforma.`;
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
+            } else if (plataforma === 'Canva') {
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu acceso a *${plataforma}*:\n\n• *Correo de Invitación:* ${datosCliente.servicioCorreo}\n• *Plan/Equipo:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu plataforma.`;
             } else {
-                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n• *Correo:* ${datosCliente.servicioCorreo}\n• *Contraseña/PIN:* ${datosCliente.contrasena}\n• *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido.`;
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n• *Correo:* ${datosCliente.servicioCorreo}${textoContrasena}\n• *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido.`;
             }
             
             const urlWa = `https://api.whatsapp.com/send?phone=${datosCliente.telefono}&text=${encodeURIComponent(mensajeWa)}`;
