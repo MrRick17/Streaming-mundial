@@ -160,7 +160,6 @@
                     <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;">Dinero en la calle</p>
                 </div>
                 
-                <!-- ESTAS SON LAS DOS CAJAS NUEVAS -->
                 <div class="kpi-card" style="border-top-color: #F59E0B;">
                     <span class="kpi-card__title">Pago a Proveedores</span>
                     <h2 class="kpi-card__value" id="rep-proveedores" style="color: #F59E0B;">$0.00</h2>
@@ -173,7 +172,6 @@
                 </div>
             </section>
 
-            <!-- NUEVO: INGRESOS DIARIOS -->
             <section class="diario-section" style="margin-bottom: 30px;">
                 <h3 class="section-title">Ingresos Diarios</h3>
                 <div class="plat-card">
@@ -199,7 +197,6 @@
                 </div>
             </section>
 
-            <!-- NUEVO: HISTORIAL POR MESES -->
             <section class="historial-section" style="margin-bottom: 30px;">
                 <h3 class="section-title">Historial de Ingresos Mensuales</h3>
                 <div class="grid-historial-meses" id="contenedor-historial-meses"></div>
@@ -380,45 +377,50 @@
                         </div>
 
                         <div class="form-box-highlight">
-    <div class="highlight-header">
-        <i class="fa-solid fa-star"></i>
-        <h4>Servicio Asignado</h4>
-    </div>
-    <div class="input-icon-wrapper mb-2">
-        <i class="fa-solid fa-tv"></i>
-        <select id="cliente-plataforma">
-            <option value="Netflix">Netflix</option>
-            <option value="Spotify">Spotify</option>
-            <option value="Max">Max</option>
-            <option value="Disney+">Disney+</option>
-            <option value="Amazon Prime">Amazon Prime</option>
-            <option value="Crunchyroll">Crunchyroll</option>
-            <option value="YouTube Premium">YouTube Premium</option>
-            <option value="Canva">Canva</option>
-            <option value="CapCut">CapCut</option>
-            <option value="IPTV">IPTV</option>
-        </select>
-    </div>
-    <div class="input-icon-wrapper mb-2">
-        <i class="fa-solid fa-users-rectangle"></i>
-        <input type="text" id="cliente-detalle" placeholder="Ej. Perfil 1 / Cupo 3" required>
-    </div>
-    <div class="input-icon-wrapper mb-2">
-        <i class="fa-solid fa-envelope"></i>
-        <input type="email" id="cliente-correo" placeholder="correo.vinculado@gmail.com" required>
-    </div>
-    
-    <!-- NUEVO CAMPO PARA SPOTIFY -->
-    <div class="input-icon-wrapper mb-2" id="grupo-correo-personal" style="display: none;">
-        <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
-        <input type="email" id="cliente-correo-personal" placeholder="Correo personal del cliente (Solo Spotify)">
-    </div>
+                            <div class="highlight-header">
+                                <i class="fa-solid fa-star"></i>
+                                <h4>Servicio Asignado</h4>
+                            </div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-tv"></i>
+                                <select id="cliente-plataforma">
+                                    <option value="Netflix">Netflix</option>
+                                    <option value="Spotify">Spotify</option>
+                                    <option value="Max">Max</option>
+                                    <option value="Disney+">Disney+</option>
+                                    <option value="Amazon Prime">Amazon Prime</option>
+                                    <option value="Crunchyroll">Crunchyroll</option>
+                                    <option value="YouTube Premium">YouTube Premium</option>
+                                    <option value="Canva">Canva</option>
+                                    <option value="CapCut">CapCut</option>
+                                    <option value="IPTV">IPTV</option>
+                                </select>
+                            </div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-users-rectangle"></i>
+                                <input type="text" id="cliente-detalle" placeholder="Ej. Perfil 1 / Cupo 3" required>
+                            </div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-envelope"></i>
+                                <input type="email" id="cliente-correo" placeholder="correo.vinculado@gmail.com" required>
+                            </div>
+                            
+                            <div class="input-icon-wrapper mb-2" id="grupo-correo-personal" style="display: none;">
+                                <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
+                                <input type="email" id="cliente-correo-personal" placeholder="Correo personal del cliente (Solo Spotify)">
+                            </div>
 
-    <div class="input-icon-wrapper">
-        <i class="fa-solid fa-lock"></i>
-        <input type="text" id="cliente-contrasena" placeholder="Contraseña o PIN del perfil">
-    </div>
-</div>
+                            <div class="input-icon-wrapper mb-2">
+                                <i class="fa-solid fa-lock"></i>
+                                <input type="text" id="cliente-contrasena" placeholder="Contraseña o PIN del perfil">
+                            </div>
+
+                            <!-- NUEVO CAMPO PARA IPTV -->
+                            <div class="input-icon-wrapper" id="grupo-enlace-iptv" style="display: none;">
+                                <i class="fa-solid fa-link" style="color: #14B8A6;"></i>
+                                <input type="url" id="cliente-enlace" placeholder="Enlace de la lista IPTV / App">
+                            </div>
+                        </div>
 
                         <button class="btn-primario btn-wa-submit" type="submit">
                             <i class="fa-brands fa-whatsapp"></i> Entregar Cuenta
@@ -442,7 +444,6 @@
         </div>
 
         <!-- MODAL EDITAR CUENTA MADRE -->
-        <!-- MODAL EDITAR CUENTA MADRE -->
         <div class="modal-overlay modal-oculto z-alto" id="modal-editar-cuenta">
             <div class="modal-box">
                 <div class="modal-box__header">
@@ -464,7 +465,6 @@
                             </div>
                         </div>
 
-                        <!-- AQUÍ AGREGAMOS EL CAMPO DE FECHA -->
                         <div class="form-group">
                             <label>Fecha de Vencimiento</label>
                             <div class="input-icon-wrapper">
@@ -525,14 +525,12 @@
     <div id="toast-container" class="toast-container"></div>
 
     <!-- VISTA CONFIGURACIÓN -->
-    <!-- VISTA CONFIGURACIÓN -->
     <div id="vista-configuracion" class="vista-seccion vista-oculta">
         <div class="top-section" style="text-align: center; margin-bottom: 30px;">
             <h1>Ajustes de Costos</h1>
             <p class="subtitle">Configura cuánto pagas al proveedor por cada Cuenta Madre</p>
         </div>
         
-        <!-- Aquí está la clave: limitamos el tamaño de la tarjeta blanca y la centramos -->
         <div class="plat-card" style="max-width: 850px; margin: 0 auto; padding: 30px;">
             <div id="contenedor-costos" class="form-grid">
                 <!-- Se generan desde JavaScript -->

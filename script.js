@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 0. MODO PRUEBA LOCAL (PROTECCIÓN DE DATOS)
     // ==========================================
-    // Cambia esto a "false" cuando quieras que guarde y lea de la base de datos real.
     const MODO_PRUEBA = false; 
 
     // ==========================================
@@ -317,7 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cuentasVencen.length > 0) {
                 sectionCuentasVencen.classList.remove('vista-oculta');
                 contCuentasVencen.innerHTML = cuentasVencen.map(c => {
-                    // Formatear la fecha para mostrarla visualmente
                     let fechaText = "Sin fecha";
                     if(c.fechaVencimiento) {
                         const f = new Date(c.fechaVencimiento);
@@ -876,11 +874,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // LÓGICA DINÁMICA DE PLATAFORMA 
     const selectPlataforma = document.getElementById('cliente-plataforma');
     const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
+    const grupoEnlaceIptv = document.getElementById('grupo-enlace-iptv'); // NUEVO PARA IPTV
     const inputContrasena = document.getElementById('cliente-contrasena');
     const inputCorreoBase = document.getElementById('cliente-correo');
 
     const adaptarFormularioSegunPlataforma = (platVal) => {
         if (!inputContrasena || !inputCorreoBase) return;
+
+        // Ocultar los campos extra por defecto
+        if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
+        if (grupoEnlaceIptv) grupoEnlaceIptv.style.display = 'none';
+        
+        inputCorreoBase.type = 'email'; // Vuelve a email para plataformas normales
 
         if (platVal === 'Spotify') {
             if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'flex';
@@ -888,12 +893,16 @@ document.addEventListener('DOMContentLoaded', () => {
             inputContrasena.placeholder = 'No requiere contraseña (Invitación)';
             inputCorreoBase.placeholder = 'Correo Admin / Cuenta Madre';
         } else if (platVal === 'Canva' || platVal === 'CapCut') {
-            if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
             inputContrasena.required = false;
             inputContrasena.placeholder = 'No requiere contraseña (Invitación por correo)';
             inputCorreoBase.placeholder = 'Correo personal o vinculado del cliente';
+        } else if (platVal === 'IPTV') {
+            if (grupoEnlaceIptv) grupoEnlaceIptv.style.display = 'flex';
+            inputContrasena.required = true;
+            inputContrasena.placeholder = 'Contraseña del IPTV';
+            inputCorreoBase.type = 'text'; // Cambia a text para aceptar usuarios que no sean correos
+            inputCorreoBase.placeholder = 'Usuario del IPTV';
         } else {
-            if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
             inputContrasena.required = true;
             inputContrasena.placeholder = 'Contraseña o PIN del perfil';
             inputCorreoBase.placeholder = 'correo.vinculado@gmail.com';
@@ -948,6 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const inputPersonal = document.getElementById('cliente-correo-personal');
         if (inputPersonal) inputPersonal.value = cliente.correoPersonal || '';
 
+        const inputEnlace = document.getElementById('cliente-enlace');
+        if (inputEnlace) inputEnlace.value = cliente.enlaceIptv || '';
+
         adaptarFormularioSegunPlataforma(cliente.servicioPlataforma);
 
         if (cliente.fechaVencimiento) {
@@ -971,14 +983,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const [year, month, day] = fechaInput.split('-');
             const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
 
-            // FORMATEO INTELIGENTE DEL NÚMERO DE WHATSAPP
+            // FORMATEO INTELIGENTE DEL NÚMERO DE WHATSAPP (MODIFICADO)
             let telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
-            if (telefono.startsWith('0')) {
-                telefono = telefono.substring(1);
-            }
-            if (!telefono.startsWith('58') && telefono.length >= 10) {
+            if (telefono.startsWith('0') && telefono.length === 11) {
+                // Si es un número local tipo 0414... se formatea a 58414...
+                telefono = '58' + telefono.substring(1);
+            } else if (telefono.length === 10 && !telefono.startsWith('58')) {
+                // Si se colocó sin el cero tipo 414... se agrega el 58
                 telefono = '58' + telefono;
             }
+            // De lo contrario (ej. números de Colombia, México o España), se deja el número internacional tal cual ingresó.
 
             const metodoPago = document.getElementById('cliente-metodo-pago').value;
             const contrasena = document.getElementById('cliente-contrasena').value.trim();
@@ -986,6 +1000,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const inputPersonal = document.getElementById('cliente-correo-personal');
             const correoPersonal = (plataforma === 'Spotify' && inputPersonal) ? inputPersonal.value.trim() : '';
+
+            const inputEnlace = document.getElementById('cliente-enlace');
+            const enlaceIptv = (plataforma === 'IPTV' && inputEnlace) ? inputEnlace.value.trim() : '';
 
             const datosCliente = {
                 id: idForm ? parseInt(idForm) : Date.now(),
@@ -996,6 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
                 servicioCorreo: document.getElementById('cliente-correo').value.trim(),
                 correoPersonal: correoPersonal,
+                enlaceIptv: enlaceIptv, // Guardamos el enlace IPTV
                 fechaVencimiento: fechaManual,
                 telefono: telefono,
                 metodoPago: metodoPago,
@@ -1031,6 +1049,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
             } else if (plataforma === 'Canva') {
                 mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu acceso a *${plataforma}*:\n\n• *Correo de Invitación:* ${datosCliente.servicioCorreo}\n• *Plan/Equipo:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu plataforma.`;
+            } else if (plataforma === 'IPTV') {
+                const textoEnlace = datosCliente.enlaceIptv !== '' ? `\n• *Enlace/App:* ${datosCliente.enlaceIptv}` : '';
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los datos de acceso de tu cuenta de *IPTV*:\n\n• *Usuario:* ${datosCliente.servicioCorreo}${textoContrasena}${textoEnlace}\n• *Dispositivos/Detalle:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido.`;
             } else {
                 mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los datos de acceso de tu cuenta de *${datosCliente.servicioPlataforma}*:\n\n• *Correo:* ${datosCliente.servicioCorreo}${textoContrasena}\n• *Perfil Asignado:* ${datosCliente.servicioDetalle}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu contenido.`;
             }
