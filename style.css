@@ -76,6 +76,15 @@ body {
   color: white;
 }
 
+.plat-amazon {
+  color: #00A8E1;
+}
+
+.bg-plat-amazon {
+  background-color: #00A8E1;
+  color: white;
+}
+
 .plat-crunchyroll {
   color: #F47521;
 }
@@ -109,6 +118,15 @@ body {
 
 .bg-plat-capcut {
   background-color: #00F2FE;
+  color: white;
+}
+
+.plat-iptv {
+  color: #14B8A6;
+}
+
+.bg-plat-iptv {
+  background-color: #14B8A6;
   color: white;
 }
 

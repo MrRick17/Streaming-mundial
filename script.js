@@ -1,6 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==========================================
+    // 0. MODO PRUEBA LOCAL (PROTECCIÓN DE DATOS)
+    // ==========================================
+    // Cambia esto a "false" cuando quieras que guarde y lea de la base de datos real.
+    const MODO_PRUEBA = false; 
+
+    // ==========================================
     // 1. INICIALIZACIÓN DE FIREBASE
     // ==========================================
     const firebaseConfig = {
@@ -31,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = `toast toast--${tipo}`; 
-        const icono = tipo === 'success' ? 'fa-circle-check' : 'fa-bell';
+        const icono = tipo === 'success' ? 'fa-circle-check' : (tipo === 'info' ? 'fa-circle-info' : 'fa-bell');
         toast.innerHTML = `<i class="fa-solid ${icono}"></i> ${mensaje}`;
         container.appendChild(toast);
         setTimeout(() => {
@@ -73,9 +79,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 4. SINCRONIZACIÓN CON FIREBASE (NUBE)
+    // 4. SINCRONIZACIÓN CON FIREBASE O LOCAL
     // ==========================================
     const guardarNube = () => {
+        if (MODO_PRUEBA) {
+            console.log("💻 MODO PRUEBA ACTIVO: Guardando en LocalStorage, no en Firebase.");
+            localStorage.setItem('streamingMundialData', JSON.stringify({ cuentas, clientes, historialPagos, costosProveedores }));
+            return;
+        }
+
         db.collection('sistema').doc('datosPrincipales').set({
             cuentas: cuentas,
             clientes: clientes,
@@ -88,6 +100,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const escucharNubeEnTiempoReal = () => {
+        if (MODO_PRUEBA) {
+            console.log("💻 MODO PRUEBA ACTIVO: Leyendo de LocalStorage.");
+            const localData = JSON.parse(localStorage.getItem('streamingMundialData'));
+            if (localData) {
+                cuentas = localData.cuentas || [];
+                clientes = localData.clientes || [];
+                historialPagos = localData.historialPagos || [];
+                costosProveedores = localData.costosProveedores || {};
+            }
+            actualizarDashboard();
+            renderizarCuentas();
+            renderizarClientes('todos');
+            renderizarVistaCostos();
+            return;
+        }
+
         db.collection('sistema').doc('datosPrincipales').onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
@@ -145,6 +173,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (actualizado) guardarNube();
     };
 
+    const verificarVencimientosCuentas = () => {
+        const hoy = new Date();
+        const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+        const limiteAviso = hoyInicio + (2 * 24 * 60 * 60 * 1000); // 2 días de aviso
+
+        let actualizado = false;
+        cuentas.forEach(c => {
+            if (!c.fechaVencimiento) return; 
+
+            let nuevoEstado = 'aldia';
+            if (c.fechaVencimiento < hoyInicio) nuevoEstado = 'vencida';
+            else if (c.fechaVencimiento <= limiteAviso) nuevoEstado = 'por-vencer';
+
+            if (c.estado !== nuevoEstado) {
+                c.estado = nuevoEstado;
+                actualizado = true;
+            }
+        });
+        if (actualizado) guardarNube();
+    };
+
     // ==========================================
     // 7. RENDERIZADO DE TARJETAS DE CLIENTE
     // ==========================================
@@ -172,6 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
         else if (c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
         else if (c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
+        else if (c.servicioPlataforma === 'Amazon Prime') { icon = 'fa-brands fa-amazon'; col = '#00A8E1'; }
+        else if (c.servicioPlataforma === 'IPTV') { icon = 'fa-solid fa-satellite-dish'; col = '#14B8A6'; }
 
         let fechaTexto = 'Sin Fecha';
         if (c.fechaVencimiento) {
@@ -224,6 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     const actualizarDashboard = () => {
         verificarVencimientosClientes();
+        verificarVencimientosCuentas();
 
         const kpiMadres = document.getElementById('kpi-madres');
         const kpiAldia = document.getElementById('kpi-aldia');
@@ -243,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderizarDashboardServicios();
         renderizarReportesFinancieros(totalEsperado);
         
+        // RENDERIZAR CLIENTES QUE VENCEN HOY
         const contVenceHoy = document.getElementById('contenedor-vence-hoy');
         const sectionVenceHoy = document.getElementById('section-vence-hoy');
         if (contVenceHoy && sectionVenceHoy) {
@@ -255,52 +308,79 @@ document.addEventListener('DOMContentLoaded', () => {
                 contVenceHoy.innerHTML = '';
             }
         }
+
+        // RENDERIZAR CUENTAS MADRE POR VENCER (O VENCIDAS)
+        const contCuentasVencen = document.getElementById('contenedor-cuentas-vencen');
+        const sectionCuentasVencen = document.getElementById('section-cuentas-vencen');
+        if (contCuentasVencen && sectionCuentasVencen) {
+            const cuentasVencen = cuentas.filter(c => c.estado === 'por-vencer' || c.estado === 'vencida');
+            if (cuentasVencen.length > 0) {
+                sectionCuentasVencen.classList.remove('vista-oculta');
+                contCuentasVencen.innerHTML = cuentasVencen.map(c => {
+                    // Formatear la fecha para mostrarla visualmente
+                    let fechaText = "Sin fecha";
+                    if(c.fechaVencimiento) {
+                        const f = new Date(c.fechaVencimiento);
+                        fechaText = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+                    }
+
+                    return `
+                    <div class="cuenta-card ${c.estado === 'vencida' ? 'card-alerta' : ''}" style="margin-bottom: 15px; ${c.estado === 'por-vencer' ? 'border-left: 5px solid #F59E0B;' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.1rem; color: #1F2937;"><i class="${c.icono}" style="color: ${c.color}; margin-right: 8px;"></i>${c.plataforma}</h3>
+                                <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #6B7280;">${c.correo}</p>
+                                <p style="margin: 2px 0 0 0; font-size: 0.75rem; font-weight: bold; color: ${c.estado === 'vencida' ? '#EF4444' : '#F59E0B'};">
+                                    <i class="fa-regular fa-calendar" style="margin-right: 3px;"></i> Fecha: ${fechaText}
+                                </p>
+                            </div>
+                            <span class="badge ${c.estado === 'vencida' ? 'badge-vencida' : ''}" style="${c.estado === 'por-vencer' ? 'background: rgba(245,158,11,0.2); color: #F59E0B;' : ''}">${c.estado === 'vencida' ? 'Vencida' : 'Vence pronto'}</span>
+                        </div>
+                    </div>
+                `}).join('');
+                
+                if(!window.avisoMostrado) {
+                    mostrarNotificacion(`Atención: Tienes ${cuentasVencen.length} cuenta(s) madre por revisar`, 'info');
+                    window.avisoMostrado = true;
+                }
+            } else {
+                sectionCuentasVencen.classList.add('vista-oculta');
+                contCuentasVencen.innerHTML = '';
+            }
+        }
     };
 
     // ==========================================
     // 9. REPORTES FINANCIEROS Y COSTOS
     // ==========================================
     const renderizarReportesFinancieros = (totalEsperado) => {
-        // ==========================================
-    // 9.5 CÁLCULO DE INGRESOS DIARIOS
-    // ==========================================
-    const calcularIngresoDiario = () => {
-        const inputFecha = document.getElementById('filtro-fecha-diario');
-        const totalDiarioEl = document.getElementById('total-diario');
+        const calcularIngresoDiario = () => {
+            const inputFecha = document.getElementById('filtro-fecha-diario');
+            const totalDiarioEl = document.getElementById('total-diario');
+            if (!inputFecha || !totalDiarioEl) return;
+            if (!inputFecha.value) {
+                const hoy = new Date();
+                const yyyy = hoy.getFullYear();
+                const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+                const dd = String(hoy.getDate()).padStart(2, '0');
+                inputFecha.value = `${yyyy}-${mm}-${dd}`;
+            }
+            const [year, month, day] = inputFecha.value.split('-');
+            const inicioDia = new Date(year, month - 1, day, 0, 0, 0).getTime();
+            const finDia = new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
+
+            const totalDia = historialPagos
+                .filter(pago => pago.fecha >= inicioDia && pago.fecha <= finDia)
+                .reduce((acc, pago) => acc + pago.monto, 0);
+            totalDiarioEl.textContent = `$${totalDia.toFixed(2)}`;
+        };
+
+        const inputFechaGlobal = document.getElementById('filtro-fecha-diario');
+        if (inputFechaGlobal) inputFechaGlobal.addEventListener('change', calcularIngresoDiario);
         
-        if (!inputFecha || !totalDiarioEl) return;
-        
-        // Si el input está vacío, le ponemos la fecha de "Hoy" automáticamente
-        if (!inputFecha.value) {
-            const hoy = new Date();
-            const yyyy = hoy.getFullYear();
-            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-            const dd = String(hoy.getDate()).padStart(2, '0');
-            inputFecha.value = `${yyyy}-${mm}-${dd}`;
-        }
-
-        // Extraemos el día seleccionado y calculamos desde las 00:00 hasta las 23:59
-        const [year, month, day] = inputFecha.value.split('-');
-        const inicioDia = new Date(year, month - 1, day, 0, 0, 0).getTime();
-        const finDia = new Date(year, month - 1, day, 23, 59, 59, 999).getTime();
-
-        // Buscamos en el historial global los cobros que caen en ese rango de horas
-        const totalDia = historialPagos
-            .filter(pago => pago.fecha >= inicioDia && pago.fecha <= finDia)
-            .reduce((acc, pago) => acc + pago.monto, 0);
-
-        totalDiarioEl.textContent = `$${totalDia.toFixed(2)}`;
-    };
-
-    // Escuchamos si cambias la fecha en el calendario para recalcular al instante
-    const inputFechaGlobal = document.getElementById('filtro-fecha-diario');
-    if (inputFechaGlobal) {
-        inputFechaGlobal.addEventListener('change', calcularIngresoDiario);
-    }
         const totalCobrado = clientes.filter(c => c.estado === 'aldia').reduce((acc, c) => acc + (parseFloat(c.montoPago) || 0), 0);
         const totalPendiente = totalEsperado - totalCobrado;
 
-        // Cálculo de Pago a Proveedores según Cuentas Madre activas
         let totalPagoProveedores = 0;
         cuentas.forEach(cuenta => {
             const costo = costosProveedores[cuenta.plataforma] || 0;
@@ -321,7 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (repProveedores) repProveedores.textContent = `$${totalPagoProveedores.toFixed(2)}`;
         if (repGanancia) repGanancia.textContent = `$${gananciaNeta.toFixed(2)}`;
 
-        // HISTORIAL POR MESES
         const contHistorial = document.getElementById('contenedor-historial-meses');
         if (contHistorial) {
             const agrupadoMeses = historialPagos.reduce((acc, pago) => {
@@ -329,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 acc[pago.mes] += pago.monto;
                 return acc;
             }, {});
-
             const nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
             const mesesOrdenados = Object.keys(agrupadoMeses).sort((a, b) => b.localeCompare(a)); 
 
@@ -352,12 +430,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             });
-
             if (htmlHistorial === '') htmlHistorial = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay ingresos registrados en el historial mensual aún.</p>`;
             contHistorial.innerHTML = htmlHistorial;
         }
 
-        // DESGLOSE POR PLATAFORMA
         const contReportesPlat = document.getElementById('contenedor-reporte-plataformas');
         if (contReportesPlat) {
             contReportesPlat.innerHTML = '';
@@ -369,7 +445,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 { nombre: 'Crunchyroll', color: '#F47521', icono: 'fa-solid fa-fire' },
                 { nombre: 'YouTube Premium', color: '#FF0000', icono: 'fa-brands fa-youtube' },
                 { nombre: 'Canva', color: '#7D2AE8', icono: 'fa-solid fa-palette' },
-                { nombre: 'CapCut', color: '#00F2FE', icono: 'fa-solid fa-video' }
+                { nombre: 'CapCut', color: '#00F2FE', icono: 'fa-solid fa-video' },
+                { nombre: 'Amazon Prime', color: '#00A8E1', icono: 'fa-brands fa-amazon' },
+                { nombre: 'IPTV', color: '#14B8A6', icono: 'fa-solid fa-satellite-dish' }
             ];
 
             let htmlPlat = '';
@@ -398,18 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             });
-
             if (htmlPlat === '') htmlPlat = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay ingresos activos registrados.</p>`;
             contReportesPlat.innerHTML = htmlPlat;
         }
-        // ... (al final de renderizarReportesFinancieros)
-        
-        // Actualizamos el reporte diario de paso
         calcularIngresoDiario();
-    
     };
-
-    
 
     // ==========================================
     // 10. SERVICIOS ACTIVOS EN INICIO
@@ -427,7 +498,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { nombre: 'Crunchyroll', color: '#F47521', icono: 'fa-solid fa-fire' },
             { nombre: 'YouTube Premium', color: '#FF0000', icono: 'fa-brands fa-youtube' },
             { nombre: 'Canva', color: '#7D2AE8', icono: 'fa-solid fa-palette' },
-            { nombre: 'CapCut', color: '#00F2FE', icono: 'fa-solid fa-video' }
+            { nombre: 'CapCut', color: '#00F2FE', icono: 'fa-solid fa-video' },
+            { nombre: 'Amazon Prime', color: '#00A8E1', icono: 'fa-brands fa-amazon' },
+            { nombre: 'IPTV', color: '#14B8A6', icono: 'fa-solid fa-satellite-dish' }
         ];
 
         serviciosDef.forEach(serv => {
@@ -465,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderizarCuentas = (filtro = '') => {
-        const grid = document.querySelector('.grid-cuentas');
+        const grid = document.querySelector('#vista-cuentas .grid-cuentas');
         if (!grid) return;
         grid.innerHTML = '';
 
@@ -480,6 +553,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             c.estado === 'por-vencer' ? `<span class="badge badge-vencida" style="background-color: rgba(245, 158, 11, 0.1); color: #F59E0B;">Por Vencer</span>` : 
                             `<span class="badge badge-aldia">Al Día</span>`;
 
+            let fechaText = "Sin fecha configurada";
+            if(c.fechaVencimiento) {
+                const f = new Date(c.fechaVencimiento);
+                fechaText = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+            }
+
             const tarjeta = document.createElement('div');
             tarjeta.className = `cuenta-card ${c.estado === 'aldia' ? 'card-ok' : 'card-alerta'}`;
             tarjeta.innerHTML = `
@@ -492,12 +571,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="plat-card__info" style="color: #4B5563; font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px;">
                     <p style="margin: 0;">Correo: <strong style="color: #1F2937;">${c.correo}</strong></p>
+                    <p style="margin: 0;">Vencimiento: <strong style="color: ${c.estado === 'vencida' ? '#EF4444' : '#1F2937'};">${fechaText}</strong></p>
                     <p style="margin: 0;">Perfiles Ocupados: <strong style="color: #1F2937;">${c.perfilesOcupados || 0} / ${c.perfilesMax}</strong></p>
                 </div>
                 <div class="plat-card__actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #F3F4F6; padding-top: 15px;">
                     <button class="btn-accion primary" type="button" onclick="abrirModalSubcuentas(${c.id})" style="background-color: rgba(59, 130, 246, 0.1); color: #3B82F6; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">Gestionar Perfiles</button>
                     <div style="display: flex; gap: 10px;">
-                        <button class="btn-icon-sub" type="button" onclick="abrirModalEditarCuenta(${c.id})" title="Editar Correo"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-icon-sub" type="button" onclick="abrirModalEditarCuenta(${c.id})" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="btn-icon-sub delete-icon" type="button" onclick="abrirModalEliminar(${c.id})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
@@ -538,7 +618,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const correoGuardado = inputCorreoObj ? inputCorreoObj.value.trim() : 'Sin Correo';
             const plataforma = document.getElementById('nuevo-plataforma').value;
             const perfilesMax = parseInt(document.getElementById('nuevo-perfiles').value) || 5;
-            const estado = document.getElementById('nuevo-estado').value;
+            
+            const inputFecha = document.getElementById('nuevo-vencimiento-cuenta')?.value;
+            let fechaManual = null;
+            if(inputFecha) {
+                const [year, month, day] = inputFecha.split('-');
+                fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
+            }
 
             let icono = 'fa-solid fa-play'; let color = '#E50914';
             if (plataforma === 'Spotify') { icono = 'fa-brands fa-spotify'; color = '#1DB954'; }
@@ -548,6 +634,8 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (plataforma === 'YouTube Premium') { icono = 'fa-brands fa-youtube'; color = '#FF0000'; }
             else if (plataforma === 'Canva') { icono = 'fa-solid fa-palette'; color = '#7D2AE8'; }
             else if (plataforma === 'CapCut') { icono = 'fa-solid fa-video'; color = '#00F2FE'; }
+            else if (plataforma === 'Amazon Prime') { icono = 'fa-brands fa-amazon'; color = '#00A8E1'; }
+            else if (plataforma === 'IPTV') { icono = 'fa-solid fa-satellite-dish'; color = '#14B8A6'; }
 
             const subcuentasIniciales = [];
             for (let i = 0; i < perfilesMax; i++) subcuentasIniciales.push({ nombre: '', correoPerfil: '' });
@@ -555,7 +643,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const nuevaCuenta = {
                 id: Date.now(), plataforma: plataforma, icono: icono, color: color,
                 correo: correoGuardado, perfilesMax: perfilesMax, perfilesOcupados: 0,
-                estado: estado, subcuentas: subcuentasIniciales
+                estado: 'aldia', fechaVencimiento: fechaManual, subcuentas: subcuentasIniciales
             };
 
             cuentas.push(nuevaCuenta);
@@ -647,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarNotificacion('Perfiles actualizados', 'success');
     });
 
-    // Editar Correo de Cuenta Madre
+    // Editar Cuenta Madre
     const modalEditarCuentaId = 'modal-editar-cuenta';
     const formEditarCuenta = document.getElementById('form-editar-cuenta');
     document.getElementById('cerrar-modal-editar-cuenta')?.addEventListener('click', () => toggleModal(modalEditarCuentaId, false));
@@ -657,6 +745,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cuenta) return;
         document.getElementById('edit-cuenta-id').value = cuenta.id;
         document.getElementById('edit-cuenta-correo').value = cuenta.correo;
+
+        if (cuenta.fechaVencimiento) {
+            const fd = new Date(cuenta.fechaVencimiento);
+            const yyyy = fd.getFullYear();
+            const mm = String(fd.getMonth() + 1).padStart(2, '0');
+            const dd = String(fd.getDate()).padStart(2, '0');
+            const inputVenc = document.getElementById('edit-cuenta-vencimiento');
+            if(inputVenc) inputVenc.value = `${yyyy}-${mm}-${dd}`;
+        }
+
         toggleModal(modalEditarCuentaId, true);
     };
 
@@ -668,11 +766,19 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const id = parseInt(document.getElementById('edit-cuenta-id').value);
             const nuevoCorreo = document.getElementById('edit-cuenta-correo').value.trim();
+            const fechaInput = document.getElementById('edit-cuenta-vencimiento')?.value;
+
             const cuenta = cuentas.find(c => c.id === id);
             if (!cuenta) return;
 
             const correoViejo = cuenta.correo;
             cuenta.correo = nuevoCorreo;
+            
+            if(fechaInput) {
+                const [year, month, day] = fechaInput.split('-');
+                cuenta.fechaVencimiento = new Date(year, month - 1, day, 23, 59, 59).getTime();
+            }
+
             guardarYRenderizarCuentas(); 
 
             const clientesAfectados = clientes.filter(c => c.servicioCorreo.toLowerCase() === correoViejo.toLowerCase() && c.servicioPlataforma === cuenta.plataforma);
@@ -684,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirModalNotificacionMasiva(clientesAfectados, cuenta.plataforma, nuevoCorreo);
             } else {
                 toggleModal(modalEditarCuentaId, false);
-                mostrarNotificacion('Correo actualizado. No hay clientes vinculados a este correo.', 'success');
+                mostrarNotificacion('Cuenta actualizada. No hay clientes vinculados a este correo.', 'success');
             }
         });
     }
@@ -767,7 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // LÓGICA DINÁMICA DE PLATAFORMA (SPOTIFY, CANVA, CAPCUT NO PIDEN CONTRASEÑA)
+    // LÓGICA DINÁMICA DE PLATAFORMA 
     const selectPlataforma = document.getElementById('cliente-plataforma');
     const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
     const inputContrasena = document.getElementById('cliente-contrasena');
@@ -865,7 +971,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const [year, month, day] = fechaInput.split('-');
             const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
 
-            const telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
+            // FORMATEO INTELIGENTE DEL NÚMERO DE WHATSAPP
+            let telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
+            if (telefono.startsWith('0')) {
+                telefono = telefono.substring(1);
+            }
+            if (!telefono.startsWith('58') && telefono.length >= 10) {
+                telefono = '58' + telefono;
+            }
+
             const metodoPago = document.getElementById('cliente-metodo-pago').value;
             const contrasena = document.getElementById('cliente-contrasena').value.trim();
             const plataforma = document.getElementById('cliente-plataforma').value;
@@ -893,7 +1007,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const index = clientes.findIndex(c => c.id === parseInt(idForm));
                 if (index > -1) { clientes[index] = datosCliente; }
                 
-                // Actualizar en el historial si cambió el precio o la plataforma
                 historialPagos.forEach(pago => {
                     if (pago.clienteId === parseInt(idForm)) {
                         pago.monto = datosCliente.montoPago;
@@ -911,13 +1024,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const fechaFormateada = new Date(fechaManual).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
             
-            // ¡ESTA ES LA LÍNEA QUE FALTABA PARA QUE NO FALLE!
             let mensajeWa = ''; 
-            
-            // Creamos la línea de contraseña SOLO si escribiste algo en la caja
             const textoContrasena = datosCliente.contrasena !== '' ? `\n• *Contraseña/PIN:* ${datosCliente.contrasena}` : '';
 
-            // Mensajes formateados con viñetas según la plataforma
             if (plataforma === 'Spotify') {
                 mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
             } else if (plataforma === 'Canva') {
@@ -939,10 +1048,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-confirmar-eliminar-cliente')?.addEventListener('click', () => {
         if (clienteAEliminarId !== null) {
             clientes = clientes.filter(c => c.id !== clienteAEliminarId);
-            
-            // Eliminar sus pagos vinculados del historial
             historialPagos = historialPagos.filter(pago => pago.clienteId !== clienteAEliminarId);
-
             guardarYRenderizarClientes();
             toggleModal(modalEliminarClienteId, false);
             clienteAEliminarId = null;
@@ -996,23 +1102,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
     // ==========================================
-    // ==========================================
-    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
-    // ==========================================
-    // ==========================================
-    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
-    // ==========================================
-    // ==========================================
-    // 13. VISTA CONFIGURACIÓN / AJUSTES DE COSTOS
-    // ==========================================
     const renderizarVistaCostos = () => {
         const contenedor = document.getElementById('contenedor-costos');
         if (!contenedor) return;
         
-        const plataformas = ['Netflix', 'Max', 'Spotify', 'Disney+', 'Crunchyroll', 'YouTube Premium', 'Canva', 'CapCut'];
+        const plataformas = ['Netflix', 'Max', 'Spotify', 'Disney+', 'Crunchyroll', 'YouTube Premium', 'Canva', 'CapCut', 'Amazon Prime', 'IPTV'];
         contenedor.innerHTML = '';
         
-        // Como centramos la tarjeta blanca en HTML, aquí solo armamos las columnas
         contenedor.style.display = 'grid';
         contenedor.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
         contenedor.style.gap = '20px';
@@ -1036,23 +1132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const plat = input.getAttribute('data-plat');
             costosProveedores[plat] = parseFloat(input.value) || 0;
         });
-        guardarNube();           // Lo sube a Firebase
-        actualizarDashboard();   // <--- ESTA ES LA CORRECCIÓN: Actualiza las finanzas inmediatamente
+        guardarNube();           
+        actualizarDashboard();   
         mostrarNotificacion('Costos guardados y calculados', 'success');
     });
 
-    // Arrancar la escucha en tiempo real desde Firebase
-    escucharNubeEnTiempoReal();
-
-    document.getElementById('btn-guardar-costos')?.addEventListener('click', () => {
-        document.querySelectorAll('.input-costo').forEach(input => {
-            const plat = input.getAttribute('data-plat');
-            costosProveedores[plat] = parseFloat(input.value) || 0;
-        });
-        guardarNube();
-        mostrarNotificacion('Costos de proveedores guardados con éxito', 'success');
-    });
-
-    // Arrancar la escucha en tiempo real desde Firebase
+    // Arrancar la escucha en tiempo real (o lectura local)
     escucharNubeEnTiempoReal();
 });
