@@ -98,7 +98,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // ==========================================
+    // 4. SINCRONIZACIÓN CON FIREBASE O LOCAL (CORREGIDA)
+    // ==========================================
     const escucharNubeEnTiempoReal = () => {
+        // Función auxiliar para refrescar manteniendo los filtros activos
+        const refrescarVistasConFiltroActual = () => {
+            actualizarDashboard();
+            renderizarVistaCostos();
+
+            // Respetar filtro activo de Cuentas Madre
+            const filtroCuentasActivo = document.querySelector('#vista-cuentas .btn-filtro.active');
+            const valFiltroCuentas = filtroCuentasActivo ? filtroCuentasActivo.getAttribute('data-filtro') : 'Todas';
+            const textoBusqCuentas = document.getElementById('buscador-cuentas')?.value || '';
+            if (textoBusqCuentas.trim() !== '') {
+                renderizarCuentas(textoBusqCuentas);
+            } else {
+                renderizarCuentas(valFiltroCuentas === 'Todas' ? '' : valFiltroCuentas);
+            }
+
+            // Respetar filtro activo de Clientes
+            const filtroClientesActivo = document.querySelector('#vista-clientes .btn-filtro.active');
+            const valFiltroClientes = filtroClientesActivo ? filtroClientesActivo.getAttribute('data-filtro') : 'todos';
+            renderizarClientes(valFiltroClientes);
+        };
+
         if (MODO_PRUEBA) {
             console.log("💻 MODO PRUEBA ACTIVO: Leyendo de LocalStorage.");
             const localData = JSON.parse(localStorage.getItem('streamingMundialData'));
@@ -108,10 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 historialPagos = localData.historialPagos || [];
                 costosProveedores = localData.costosProveedores || {};
             }
-            actualizarDashboard();
-            renderizarCuentas();
-            renderizarClientes('todos');
-            renderizarVistaCostos();
+            refrescarVistasConFiltroActual();
             return;
         }
 
@@ -123,13 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 historialPagos = data.historialPagos || [];
                 costosProveedores = data.costosProveedores || {};
             }
-            actualizarDashboard();
-            renderizarCuentas();
-            renderizarClientes('todos');
-            renderizarVistaCostos();
+            refrescarVistasConFiltroActual();
         }, (error) => {
             console.error("Error al escuchar Firebase:", error);
         });
+    
     };
 
     // ==========================================
