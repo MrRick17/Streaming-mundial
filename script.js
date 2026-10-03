@@ -153,24 +153,119 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 6. VERIFICACIÓN DE VENCIMIENTOS
     // ==========================================
-    const verificarVencimientosClientes = () => {
-        const hoy = new Date();
-        const hoyInicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
-        const hoyFin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999).getTime();
+    // ==========================================
+// 6. VERIFICACIÓN DE VENCIMIENTOS (ROBUSTA)
+// ==========================================
+// ==========================================
+// 6. VERIFICACIÓN DE VENCIMIENTOS (CORREGIDA)
+// ==========================================
+// ==========================================
+// 6. VERIFICACIÓN DE VENCIMIENTOS (HOY Y MAÑANA)
+// ==========================================
+// ==========================================
+// 6. VERIFICACIÓN DE VENCIMIENTOS (HOY Y MAÑANA)
+// ==========================================
+const verificarVencimientosClientes = () => {
+    const ahora = new Date();
+    // Inicio del día de hoy (00:00:00)
+    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+    // Fin del día de mañana (23:59:59)
+    const finMañana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 23, 59, 59, 999).getTime();
 
-        let actualizado = false;
-        clientes.forEach(c => {
-            let nuevoEstado = 'aldia';
-            if (c.fechaVencimiento < hoyInicio) nuevoEstado = 'moroso';
-            else if (c.fechaVencimiento >= hoyInicio && c.fechaVencimiento <= hoyFin) nuevoEstado = 'vence-hoy';
+    let actualizado = false;
+    clientes.forEach(c => {
+        if (!c.fechaVencimiento) return;
 
-            if (c.estado !== nuevoEstado) {
-                c.estado = nuevoEstado;
-                actualizado = true;
-            }
+        let nuevoEstado = 'aldia';
+        if (c.fechaVencimiento < inicioHoy) {
+            nuevoEstado = 'moroso'; // Ya venció
+        } else if (c.fechaVencimiento <= finMañana) {
+            nuevoEstado = 'vence-hoy'; // Vence hoy o vence mañana (activa la alerta amarilla)
+        } else {
+            nuevoEstado = 'aldia';
+        }
+
+        if (c.estado !== nuevoEstado) {
+            c.estado = nuevoEstado;
+            actualizado = true;
+        }
+    });
+    if (actualizado) guardarNube();
+};
+
+
+// ==========================================
+// NOTIFICACIÓN AUTOMÁTICA AL ENTRAR A LA APP
+// ==========================================
+// ==========================================
+// NOTIFICACIÓN PREMIUM AUTOMÁTICA AL ENTRAR
+// ==========================================
+// ==========================================
+// NOTIFICACIÓN PREMIUM AUTOMÁTICA AL ENTRAR (CENTRADA Y SEGURA)
+// ==========================================
+// ==========================================
+// AVISO AUTOMÁTICO AL ENTRAR (MODAL CENTRAL SÓLIDO)
+// ==========================================
+let alertaInicioMostrada = false;
+
+const mostrarModalAvisoHoy = (clientesHoy) => {
+    // Si ya existe el modal en el DOM, solo lo actualizamos y mostramos
+    let modal = document.getElementById('modal-aviso-vencidos-hoy');
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-aviso-vencidos-hoy';
+        // Usamos tus clases de modal existentes para mantener el diseño idéntico
+        modal.className = 'modal-overlay z-alto'; 
+        modal.innerHTML = `
+            <div class="modal-box" style="text-align: center; padding: 35px 25px; max-width: 400px; border-top: 4px solid #F59E0B;">
+                <div style="font-size: 3.5rem; color: #F59E0B; margin-bottom: 15px; filter: drop-shadow(0 5px 15px rgba(245, 158, 11, 0.4));">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <h3 class="modal-box__title" style="color: #FFFFFF; font-size: 1.4rem; font-weight: 900; margin-bottom: 10px;">Aviso de Vencimiento</h3>
+                <p class="modal-box__text" id="texto-aviso-hoy" style="color: rgba(255, 255, 255, 0.85); font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px;"></p>
+                <div class="modal-box__buttons" style="display: flex; justify-content: center;">
+                    <button id="btn-cerrar-aviso-hoy" class="btn-primario btn-full-mt" style="width: 100%; margin-top: 0; padding: 12px; border-radius: 14px;">Entendido</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Evento para cerrar el modal al hacer clic en el botón
+        document.getElementById('btn-cerrar-aviso-hoy').addEventListener('click', () => {
+            modal.classList.add('modal-oculto');
         });
-        if (actualizado) guardarNube();
-    };
+    }
+
+    document.getElementById('texto-aviso-hoy').innerHTML = `Tienes <strong>${clientesHoy.length}</strong> cliente(s) cuyo servicio vence exactamente el día de hoy.`;
+    modal.classList.remove('modal-oculto');
+};
+
+const verificarAlertasAlEntrar = () => {
+    if (alertaInicioMostrada) return;
+    if (typeof clientes === 'undefined' || !Array.isArray(clientes)) return;
+
+    // Marcamos inmediatamente como verdadera para evitar bucles
+    alertaInicioMostrada = true;
+
+    const hoy = new Date();
+    const anioHoy = hoy.getFullYear();
+    const mesHoy = hoy.getMonth();
+    const diaHoy = hoy.getDate();
+
+    // Filtramos estrictamente a los clientes que vencen HOY
+    const clientesHoy = clientes.filter(c => {
+        if (!c.fechaVencimiento) return false;
+        const f = new Date(c.fechaVencimiento);
+        return f.getFullYear() === anioHoy && f.getMonth() === mesHoy && f.getDate() === diaHoy;
+    });
+
+    if (clientesHoy.length > 0) {
+        setTimeout(() => {
+            mostrarModalAvisoHoy(clientesHoy);
+        }, 1000);
+    }
+};
 
     const verificarVencimientosCuentas = () => {
         const hoy = new Date();
@@ -196,73 +291,82 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 7. RENDERIZADO DE TARJETAS DE CLIENTE
     // ==========================================
-    const generarHTMLTarjetaCliente = (c) => {
+    const generarHTMLTarjetaCliente = function(c) {
         const esMoroso = c.estado === 'moroso';
         const esHoy = c.estado === 'vence-hoy';
-        const iniciales = c.nombre ? c.nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'CL';
-
-        let bgGradient = 'gradient-aldia';
-        let badgeTexto = 'Al Día';
-        let badgeClase = 'badge-aldia';
-        let avatarColor = '#10B981';
-
-        if (esMoroso) {
-            bgGradient = 'gradient-atrasado'; badgeTexto = 'Atrasado'; badgeClase = 'badge-vencida'; avatarColor = '#EF4444';
-        } else if (esHoy) {
-            bgGradient = 'gradient-vence-hoy'; badgeTexto = 'Vence Hoy'; badgeClase = 'badge-vencida'; avatarColor = '#F59E0B';
+        
+        let iniciales = 'CL';
+        if (c.nombre) {
+            const partes = c.nombre.split(' ');
+            iniciales = partes.map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
         }
 
-        let icon = 'fa-solid fa-play'; let col = '#E50914';
-        if (c.servicioPlataforma === 'Spotify') { icon = 'fa-brands fa-spotify'; col = '#1DB954'; }
-        else if (c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; col = '#002BE7'; }
-        else if (c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; col = '#113CCF'; }
-        else if (c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; col = '#F47521'; }
-        else if (c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; col = '#FF0000'; }
-        else if (c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; col = '#7D2AE8'; }
-        else if (c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; col = '#00F2FE'; }
-        else if (c.servicioPlataforma === 'Amazon Prime') { icon = 'fa-brands fa-amazon'; col = '#00A8E1'; }
-        else if (c.servicioPlataforma === 'IPTV') { icon = 'fa-solid fa-satellite-dish'; col = '#14B8A6'; }
+        const bgGradient = esMoroso ? 'bg-gradient-danger' : esHoy ? 'bg-gradient-warning' : 'bg-gradient-success';
+        const badgeTexto = esMoroso ? 'Atrasado' : esHoy ? 'Vence Hoy' : 'Al Día';
+
+        let icon = 'fa-solid fa-play'; 
+        if (c.servicioPlataforma.indexOf('Spotify') !== -1) { icon = 'fa-brands fa-spotify'; }
+        else if (c.servicioPlataforma === 'Max') { icon = 'fa-solid fa-tv'; }
+        else if (c.servicioPlataforma === 'Disney+') { icon = 'fa-solid fa-star'; }
+        else if (c.servicioPlataforma === 'Crunchyroll') { icon = 'fa-solid fa-fire'; }
+        else if (c.servicioPlataforma === 'YouTube Premium') { icon = 'fa-brands fa-youtube'; }
+        else if (c.servicioPlataforma === 'Canva') { icon = 'fa-solid fa-palette'; }
+        else if (c.servicioPlataforma === 'CapCut') { icon = 'fa-solid fa-video'; }
+        else if (c.servicioPlataforma === 'Amazon Prime') { icon = 'fa-brands fa-amazon'; }
+        else if (c.servicioPlataforma === 'IPTV') { icon = 'fa-solid fa-satellite-dish'; }
 
         let fechaTexto = 'Sin Fecha';
         if (c.fechaVencimiento) {
             const f = new Date(c.fechaVencimiento);
-            fechaTexto = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+            let dStr = String(f.getDate()); if (dStr.length === 1) dStr = '0' + dStr;
+            let mStr = String(f.getMonth() + 1); if (mStr.length === 1) mStr = '0' + mStr;
+            fechaTexto = dStr + '/' + mStr + '/' + f.getFullYear();
         }
 
-        const correoAMostrar = c.servicioPlataforma === 'Spotify' && c.correoPersonal ? c.correoPersonal : c.servicioCorreo;
+        const correoAMostrar = (c.servicioPlataforma.indexOf('Spotify') !== -1 && c.correoPersonal) ? c.correoPersonal : c.servicioCorreo;
+        const btnTextoRenovar = (esMoroso || esHoy) ? 'Cobrar' : 'Renovar';
+        const iconRenovar = (esMoroso || esHoy) ? 'fa-solid fa-bell' : 'fa-solid fa-receipt';
+        const claseBotonPago = (esMoroso || esHoy) ? 'danger' : 'success';
 
         return `
             <div class="cliente-card ${bgGradient}">
-                <div class="cliente-card__header" style="border-bottom-color: rgba(0,0,0,0.05);">
-                    <div class="cliente-meta">
-                        <div class="cliente-avatar" style="background-color: ${avatarColor};">${iniciales}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.18);">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div class="glass-icon-circle" style="font-weight: 800; font-size: 1.1rem; color: #FFFFFF;">
+                            ${iniciales}
+                        </div>
                         <div>
-                            <h3>${c.nombre}</h3>
-                            <span class="badge ${badgeClase}" ${esHoy ? 'style="background: rgba(245,158,11,0.2); color: #F59E0B;"' : ''}>${badgeTexto}</span>
+                            <h3 style="margin: 0; font-size: 1.15rem; color: #FFFFFF; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,0.3);">${c.nombre}</h3>
+                            <span style="background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; color: #FFFFFF; border: 1px solid rgba(255,255,255,0.25); display: inline-block; margin-top: 5px; text-transform: uppercase; letter-spacing: 0.5px;">${badgeTexto}</span>
                         </div>
                     </div>
-                    <button class="btn-icon-sub" onclick="eliminarCliente(${c.id})" title="Borrar" type="button"><i class="fa-solid fa-trash" style="color: #9CA3AF;"></i></button>
+                    <button onclick="eliminarCliente(${c.id})" title="Borrar" type="button" style="background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.5); color: #ff9999; cursor: pointer; font-size: 1rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.4)'" onmouseout="this.style.background='rgba(239,68,68,0.25)'"><i class="fa-solid fa-trash"></i></button>
                 </div>
-                <div class="cliente-servicios">
-                    <h4>Servicios Contratados:</h4>
-                    <div class="servicio-linea">
-                        <i class="${icon}" style="color: ${col};"></i>
-                        <div class="servicio-detalles">
-                            <p class="serv-nom">${c.servicioPlataforma} (${c.servicioDetalle}) - <strong style="color: #10B981;">$${parseFloat(c.montoPago || 0).toFixed(2)}</strong></p>
-                            <p class="serv-mail" style="margin-bottom: 4px;">${correoAMostrar}</p>
-                            <p class="serv-mail" style="font-weight: 700;">
-                                <i class="fa-regular fa-calendar" style="color: ${esMoroso ? '#EF4444' : '#6B7280'}; font-size: 0.8rem; margin-right: 3px;"></i> 
-                                Vence: <span style="color: ${esMoroso ? '#EF4444' : '#1F2937'};">${fechaTexto}</span>
+                
+                <div style="padding: 16px 0;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div class="glass-icon-circle" style="background: rgba(255,255,255,0.18);">
+                            <i class="${icon}"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <p style="margin: 0; font-size: 1rem; font-weight: 800; color: #FFFFFF;">
+                                ${c.servicioPlataforma} <span style="font-size: 0.8rem; font-weight: 500; opacity: 0.9;">(${c.servicioDetalle})</span>
+                                <span style="float: right; font-size: 1.2rem; font-weight: 900; color: #38BDF8; text-shadow: 0 2px 10px rgba(56,189,248,0.4);">$${parseFloat(c.montoPago || 0).toFixed(2)}</span>
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: rgba(255,255,255,0.9); font-weight: 500; word-break: break-all;">${correoAMostrar}</p>
+                            <p style="margin: 6px 0 0 0; font-size: 0.82rem; font-weight: 700; color: #FFFFFF;">
+                                <i class="fa-regular fa-calendar" style="margin-right: 5px; opacity: 0.8;"></i>Vence: ${fechaTexto}
                             </p>
                         </div>
                     </div>
                 </div>
-                <div class="cliente-card__actions">
-                    <button class="btn-accion-cliente" onclick="abrirModalCliente(${c.id})" type="button"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+
+                <div style="display: flex; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.18); flex-wrap: wrap;">
+                    <button class="glass-btn" onclick="abrirModalCliente(${c.id})" type="button"><i class="fa-solid fa-pen-to-square"></i> Editar</button>
+                    <button class="glass-btn ${claseBotonPago}" onclick="abrirModalPago(${c.id})" type="button"><i class="${iconRenovar}"></i> ${btnTextoRenovar}</button>
                     ${(esMoroso || esHoy) 
-                        ? `<button class="btn-accion-cliente" style="color: #EF4444; border-color: #EF4444;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-bell"></i> Cobrar</button>
-                           <button class="btn-accion-cliente" style="color: #25D366; border-color: rgba(37,211,102,0.3);" onclick="enviarRecordatorio(${c.id})" type="button" title="Enviar recordatorio"><i class="fa-brands fa-whatsapp"></i> ${c.estadoAviso === 'avisado' ? 'Reenviar' : 'Avisar'}</button>`
-                        : `<button class="btn-accion-cliente" style="color: #10B981;" onclick="abrirModalPago(${c.id})" type="button"><i class="fa-solid fa-receipt"></i> Renovar</button>`
+                        ? `<button class="glass-btn" style="background: linear-gradient(135deg, rgba(37,211,102,0.4), rgba(18,140,126,0.6)); border-color: rgba(37,211,102,0.7);" onclick="enviarRecordatorio(${c.id})" type="button"><i class="fa-brands fa-whatsapp"></i> ${c.estadoAviso === 'avisado' ? 'Reenviar' : 'Avisar'}</button>` 
+                        : ``
                     }
                 </div>
             </div>
@@ -308,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // RENDERIZAR CUENTAS MADRE POR VENCER (O VENCIDAS)
+        // RENDERIZAR CUENTAS MADRE POR VENCER
         const contCuentasVencen = document.getElementById('contenedor-cuentas-vencen');
         const sectionCuentasVencen = document.getElementById('section-cuentas-vencen');
         if (contCuentasVencen && sectionCuentasVencen) {
@@ -332,20 +436,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <i class="fa-regular fa-calendar" style="margin-right: 3px;"></i> Fecha: ${fechaText}
                                 </p>
                             </div>
-                            <span class="badge ${c.estado === 'vencida' ? 'badge-vencida' : ''}" style="${c.estado === 'por-vencer' ? 'background: rgba(245,158,11,0.2); color: #F59E0B;' : ''}">${c.estado === 'vencida' ? 'Vencida' : 'Vence pronto'}</span>
+                            <span class="badge ${c.estado === 'vencida' ? 'badge-vencida' : 'badge-warning'}">${c.estado === 'vencida' ? 'Vencida' : 'Vence pronto'}</span>
                         </div>
                     </div>
                 `}).join('');
-                
-                if(!window.avisoMostrado) {
-                    mostrarNotificacion(`Atención: Tienes ${cuentasVencen.length} cuenta(s) madre por revisar`, 'info');
-                    window.avisoMostrado = true;
-                }
             } else {
                 sectionCuentasVencen.classList.add('vista-oculta');
                 contCuentasVencen.innerHTML = '';
             }
         }
+        mostrarNotificacionPremium();
     };
 
     // ==========================================
@@ -390,14 +490,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const repEsperado = document.getElementById('rep-esperado');
         const repCobrado = document.getElementById('rep-cobrado');
         const repPendiente = document.getElementById('rep-pendiente');
-        const repProveedores = document.getElementById('rep-proveedores');
-        const repGanancia = document.getElementById('rep-ganancia');
+        
+        const repProveedores1 = document.getElementById('rep-proveedores');
+        const repProveedores2 = document.getElementById('rep-proveedores-2');
+        const repGanancia1 = document.getElementById('rep-ganancia');
+        const repGanancia2 = document.getElementById('rep-ganancia-2');
 
         if (repEsperado) repEsperado.textContent = `$${totalEsperado.toFixed(2)}`;
         if (repCobrado) repCobrado.textContent = `$${totalCobrado.toFixed(2)}`;
         if (repPendiente) repPendiente.textContent = `$${totalPendiente.toFixed(2)}`;
-        if (repProveedores) repProveedores.textContent = `$${totalPagoProveedores.toFixed(2)}`;
-        if (repGanancia) repGanancia.textContent = `$${gananciaNeta.toFixed(2)}`;
+        
+        if (repProveedores1) repProveedores1.textContent = `$${totalPagoProveedores.toFixed(2)}`;
+        if (repProveedores2) repProveedores2.textContent = `$${totalPagoProveedores.toFixed(2)}`;
+        if (repGanancia1) repGanancia1.textContent = `$${gananciaNeta.toFixed(2)}`;
+        if (repGanancia2) repGanancia2.textContent = `$${gananciaNeta.toFixed(2)}`;
 
         const contHistorial = document.getElementById('contenedor-historial-meses');
         if (contHistorial) {
@@ -438,7 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const plataformas = [
                 { nombre: 'Netflix', color: '#E50914', icono: 'fa-solid fa-play' },
                 { nombre: 'Max', color: '#002BE7', icono: 'fa-solid fa-tv' },
-                { nombre: 'Spotify', color: '#1DB954', icono: 'fa-brands fa-spotify' },
+                { nombre: 'Spotify Familiar', color: '#1DB954', icono: 'fa-brands fa-spotify' },
+                { nombre: 'Spotify Personal', color: '#1ED760', icono: 'fa-brands fa-spotify' },
                 { nombre: 'Disney+', color: '#113CCF', icono: 'fa-solid fa-star' },
                 { nombre: 'Crunchyroll', color: '#F47521', icono: 'fa-solid fa-fire' },
                 { nombre: 'YouTube Premium', color: '#FF0000', icono: 'fa-brands fa-youtube' },
@@ -491,7 +598,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const serviciosDef = [
             { nombre: 'Netflix', color: '#E50914', icono: 'fa-solid fa-play' },
             { nombre: 'Max', color: '#002BE7', icono: 'fa-solid fa-tv' },
-            { nombre: 'Spotify', color: '#1DB954', icono: 'fa-brands fa-spotify' },
+            { nombre: 'Spotify Familiar', color: '#1DB954', icono: 'fa-brands fa-spotify' },
+            { nombre: 'Spotify Personal', color: '#1ED760', icono: 'fa-brands fa-spotify' },
             { nombre: 'Disney+', color: '#113CCF', icono: 'fa-solid fa-star' },
             { nombre: 'Crunchyroll', color: '#F47521', icono: 'fa-solid fa-fire' },
             { nombre: 'YouTube Premium', color: '#FF0000', icono: 'fa-brands fa-youtube' },
@@ -527,60 +635,66 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // 11. GESTIÓN DE CUENTAS MADRE
     // ==========================================
-    const guardarYRenderizarCuentas = () => {
-        guardarNube();
-        const filtroActivo = document.querySelector('#vista-cuentas .btn-filtro.active');
-        const textoFiltro = filtroActivo && filtroActivo.getAttribute('data-filtro') !== 'Todas' ? filtroActivo.getAttribute('data-filtro') : '';
-        renderizarCuentas(textoFiltro);
-        actualizarDashboard();
-    };
-
-    const renderizarCuentas = (filtro = '') => {
+    const renderizarCuentas = function(filtro) {
+        filtro = filtro || '';
         const grid = document.querySelector('#vista-cuentas .grid-cuentas');
         if (!grid) return;
         grid.innerHTML = '';
 
-        const filtradas = cuentas.filter(c => c.correo.toLowerCase().includes(filtro.toLowerCase()) || c.plataforma.toLowerCase().includes(filtro.toLowerCase()));
+        const filtradas = cuentas.filter(function(c) {
+            return c.correo.toLowerCase().indexOf(filtro.toLowerCase()) !== -1 || c.plataforma.toLowerCase().indexOf(filtro.toLowerCase()) !== -1;
+        });
+
         if (filtradas.length === 0) {
-            grid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #9CA3AF; padding: 25px;">No hay cuentas registradas con este filtro.</p>`;
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: rgba(255,255,255,0.5); padding: 25px;">No hay cuentas con este filtro.</p>';
             return;
         }
 
-        filtradas.forEach(c => {
-            let badgeHTML = c.estado === 'vencida' ? `<span class="badge badge-vencida">Vencida</span>` : 
-                            c.estado === 'por-vencer' ? `<span class="badge badge-vencida" style="background-color: rgba(245, 158, 11, 0.1); color: #F59E0B;">Por Vencer</span>` : 
-                            `<span class="badge badge-aldia">Al Día</span>`;
+        filtradas.forEach(function(c) {
+            const bgGradient = c.estado === 'vencida' ? 'bg-gradient-danger' : 
+                               c.estado === 'por-vencer' ? 'bg-gradient-warning' : 
+                               'bg-gradient-success';
+            const badgeTexto = c.estado === 'vencida' ? 'Vencida' : 
+                               c.estado === 'por-vencer' ? 'Por Vencer' : 'Al Día';
 
             let fechaText = "Sin fecha configurada";
             if(c.fechaVencimiento) {
                 const f = new Date(c.fechaVencimiento);
-                fechaText = `${String(f.getDate()).padStart(2, '0')}/${String(f.getMonth() + 1).padStart(2, '0')}/${f.getFullYear()}`;
+                let dStr = String(f.getDate()); if (dStr.length === 1) dStr = '0' + dStr;
+                let mStr = String(f.getMonth() + 1); if (mStr.length === 1) mStr = '0' + mStr;
+                fechaText = dStr + '/' + mStr + '/' + f.getFullYear();
             }
 
-            const tarjeta = document.createElement('div');
-            tarjeta.className = `cuenta-card ${c.estado === 'aldia' ? 'card-ok' : 'card-alerta'}`;
-            tarjeta.innerHTML = `
-                <div class="plat-card__header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div class="plat-meta" style="display: flex; align-items: center; gap: 10px;">
-                        <i class="${c.icono}" style="color: ${c.color}; font-size: 1.4rem;"></i>
-                        <h3 style="margin: 0; font-size: 1.1rem; color: #1F2937;">${c.plataforma}</h3>
+            const html = `
+                <div class="cuenta-card ${bgGradient}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.18);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="glass-icon-circle">
+                                <i class="${c.icono}"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.15rem; color: #fff; font-weight: 800;">${c.plataforma}</h3>
+                        </div>
+                        <span style="background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; color: #fff; border: 1px solid rgba(255,255,255,0.25); text-transform: uppercase;">${badgeTexto}</span>
                     </div>
-                    ${badgeHTML}
-                </div>
-                <div class="plat-card__info" style="color: #4B5563; font-size: 0.88rem; display: flex; flex-direction: column; gap: 6px;">
-                    <p style="margin: 0;">Correo: <strong style="color: #1F2937;">${c.correo}</strong></p>
-                    <p style="margin: 0;">Vencimiento: <strong style="color: ${c.estado === 'vencida' ? '#EF4444' : '#1F2937'};">${fechaText}</strong></p>
-                    <p style="margin: 0;">Perfiles Ocupados: <strong style="color: #1F2937;">${c.perfilesOcupados || 0} / ${c.perfilesMax}</strong></p>
-                </div>
-                <div class="plat-card__actions" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #F3F4F6; padding-top: 15px;">
-                    <button class="btn-accion primary" type="button" onclick="abrirModalSubcuentas(${c.id})" style="background-color: rgba(59, 130, 246, 0.1); color: #3B82F6; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">Gestionar Perfiles</button>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-icon-sub" type="button" onclick="abrirModalEditarCuenta(${c.id})" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="btn-icon-sub delete-icon" type="button" onclick="abrirModalEliminar(${c.id})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.88rem; display: flex; flex-direction: column; gap: 8px;">
+                        <p style="margin: 0; font-weight: 500;">Correo: <strong style="color: #fff; display: block; font-size: 0.95rem; margin-top: 2px; word-break: break-all;">${c.correo}</strong></p>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 6px;">
+                            <p style="margin: 0; font-weight: 500;">Vencimiento:<br><strong style="color: #fff; font-weight: 700;">${fechaText}</strong></p>
+                            <p style="margin: 0; text-align: right; font-weight: 500;">Ocupados:<br><strong style="color: #fff; font-weight: 700;">${c.perfilesOcupados || 0} / ${c.perfilesMax}</strong></p>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.18); padding-top: 14px;">
+                        <button class="glass-btn" type="button" onclick="abrirModalSubcuentas(${c.id})"><i class="fa-solid fa-users"></i> Gestionar</button>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="glass-btn" type="button" onclick="abrirModalEditarCuenta(${c.id})" style="padding: 8px 12px;"><i class="fa-solid fa-pen"></i></button>
+                            <button class="glass-btn" type="button" onclick="abrirModalEliminar(${c.id})" style="padding: 8px 12px; background: rgba(239,68,68,0.3); border-color: rgba(239,68,68,0.5); color: #ff9999;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                 </div>
             `;
-            grid.appendChild(tarjeta);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = html;
+            grid.appendChild(wrapper.firstElementChild);
         });
     };
 
@@ -609,14 +723,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-agregar-cuenta')?.addEventListener('click', () => toggleModal(modalAgregarId, true));
     document.getElementById('cerrar-modal-agregar')?.addEventListener('click', () => toggleModal(modalAgregarId, false));
     
+    // LÓGICA PARA FORZAR 1 PERFIL EN SPOTIFY PERSONAL
+    const selectNuevoPlat = document.getElementById('nuevo-plataforma');
+    const inputNuevoPerfiles = document.getElementById('nuevo-perfiles');
+    if(selectNuevoPlat && inputNuevoPerfiles) {
+        selectNuevoPlat.addEventListener('change', (e) => {
+            if (e.target.value === 'Spotify Personal') {
+                inputNuevoPerfiles.value = 1;
+                inputNuevoPerfiles.setAttribute('readonly', 'true');
+            } else {
+                inputNuevoPerfiles.removeAttribute('readonly');
+            }
+        });
+    }
+
     if (formAgregarCuenta) {
         formAgregarCuenta.addEventListener('submit', (e) => {
             e.preventDefault();
             const inputCorreoObj = document.getElementById('nuevo-correo');
             const correoGuardado = inputCorreoObj ? inputCorreoObj.value.trim() : 'Sin Correo';
             const plataforma = document.getElementById('nuevo-plataforma').value;
-            const perfilesMax = parseInt(document.getElementById('nuevo-perfiles').value) || 5;
             
+            // Forzar máximo de perfiles si es Personal
+            let perfilesMax = parseInt(document.getElementById('nuevo-perfiles').value) || 5;
+            if (plataforma === 'Spotify Personal') perfilesMax = 1; 
+
             const inputFecha = document.getElementById('nuevo-vencimiento-cuenta')?.value;
             let fechaManual = null;
             if(inputFecha) {
@@ -625,7 +756,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             let icono = 'fa-solid fa-play'; let color = '#E50914';
-            if (plataforma === 'Spotify') { icono = 'fa-brands fa-spotify'; color = '#1DB954'; }
+            if (plataforma.includes('Spotify')) { icono = 'fa-brands fa-spotify'; color = '#1DB954'; }
             else if (plataforma === 'Max') { icono = 'fa-solid fa-tv'; color = '#002BE7'; }
             else if (plataforma === 'Disney+') { icono = 'fa-solid fa-star'; color = '#113CCF'; }
             else if (plataforma === 'Crunchyroll') { icono = 'fa-solid fa-fire'; color = '#F47521'; }
@@ -874,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // LÓGICA DINÁMICA DE PLATAFORMA 
     const selectPlataforma = document.getElementById('cliente-plataforma');
     const grupoCorreoPersonal = document.getElementById('grupo-correo-personal');
-    const grupoEnlaceIptv = document.getElementById('grupo-enlace-iptv'); // NUEVO PARA IPTV
+    const grupoEnlaceIptv = document.getElementById('grupo-enlace-iptv'); 
     const inputContrasena = document.getElementById('cliente-contrasena');
     const inputCorreoBase = document.getElementById('cliente-correo');
 
@@ -885,9 +1016,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'none';
         if (grupoEnlaceIptv) grupoEnlaceIptv.style.display = 'none';
         
-        inputCorreoBase.type = 'email'; // Vuelve a email para plataformas normales
+        inputCorreoBase.type = 'email'; 
 
-        if (platVal === 'Spotify') {
+        if (platVal.includes('Spotify')) {
             if (grupoCorreoPersonal) grupoCorreoPersonal.style.display = 'flex';
             inputContrasena.required = false;
             inputContrasena.placeholder = 'No requiere contraseña (Invitación)';
@@ -900,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (grupoEnlaceIptv) grupoEnlaceIptv.style.display = 'flex';
             inputContrasena.required = true;
             inputContrasena.placeholder = 'Contraseña del IPTV';
-            inputCorreoBase.type = 'text'; // Cambia a text para aceptar usuarios que no sean correos
+            inputCorreoBase.type = 'text'; 
             inputCorreoBase.placeholder = 'Usuario del IPTV';
         } else {
             inputContrasena.required = true;
@@ -974,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleModal(modalClienteId, true);
     };
 
-    // Guardar Cliente (Nuevo o Edición)
+    // Guardar Cliente
     if (formCliente) {
         formCliente.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -983,23 +1114,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const [year, month, day] = fechaInput.split('-');
             const fechaManual = new Date(year, month - 1, day, 23, 59, 59).getTime();
 
-            // FORMATEO INTELIGENTE DEL NÚMERO DE WHATSAPP (MODIFICADO)
             let telefono = document.getElementById('cliente-telefono').value.replace(/\D/g, ''); 
             if (telefono.startsWith('0') && telefono.length === 11) {
-                // Si es un número local tipo 0414... se formatea a 58414...
                 telefono = '58' + telefono.substring(1);
             } else if (telefono.length === 10 && !telefono.startsWith('58')) {
-                // Si se colocó sin el cero tipo 414... se agrega el 58
                 telefono = '58' + telefono;
             }
-            // De lo contrario (ej. números de Colombia, México o España), se deja el número internacional tal cual ingresó.
 
             const metodoPago = document.getElementById('cliente-metodo-pago').value;
             const contrasena = document.getElementById('cliente-contrasena').value.trim();
             const plataforma = document.getElementById('cliente-plataforma').value;
 
             const inputPersonal = document.getElementById('cliente-correo-personal');
-            const correoPersonal = (plataforma === 'Spotify' && inputPersonal) ? inputPersonal.value.trim() : '';
+            const correoPersonal = (plataforma.includes('Spotify') && inputPersonal) ? inputPersonal.value.trim() : '';
 
             const inputEnlace = document.getElementById('cliente-enlace');
             const enlaceIptv = (plataforma === 'IPTV' && inputEnlace) ? inputEnlace.value.trim() : '';
@@ -1013,7 +1140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 servicioDetalle: document.getElementById('cliente-detalle').value.trim(),
                 servicioCorreo: document.getElementById('cliente-correo').value.trim(),
                 correoPersonal: correoPersonal,
-                enlaceIptv: enlaceIptv, // Guardamos el enlace IPTV
+                enlaceIptv: enlaceIptv, 
                 fechaVencimiento: fechaManual,
                 telefono: telefono,
                 metodoPago: metodoPago,
@@ -1045,8 +1172,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let mensajeWa = ''; 
             const textoContrasena = datosCliente.contrasena !== '' ? `\n• *Contraseña/PIN:* ${datosCliente.contrasena}` : '';
 
-            if (plataforma === 'Spotify') {
-                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *Spotify*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
+            if (plataforma.includes('Spotify')) {
+                mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu cuenta de *${plataforma}*:\n\n• *Tu Correo (Invitación):* ${datosCliente.correoPersonal}\n• *Plan:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra!`;
             } else if (plataforma === 'Canva') {
                 mensajeWa = `Hola ${datosCliente.nombre}!\n\nAquí tienes los detalles de tu acceso a *${plataforma}*:\n\n• *Correo de Invitación:* ${datosCliente.servicioCorreo}\n• *Plan/Equipo:* ${datosCliente.servicioDetalle}${textoContrasena}\n\n• *Tu cuenta vence el:* ${fechaFormateada}\n\n¡Gracias por tu compra! Disfruta tu plataforma.`;
             } else if (plataforma === 'IPTV') {
@@ -1127,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const contenedor = document.getElementById('contenedor-costos');
         if (!contenedor) return;
         
-        const plataformas = ['Netflix', 'Max', 'Spotify', 'Disney+', 'Crunchyroll', 'YouTube Premium', 'Canva', 'CapCut', 'Amazon Prime', 'IPTV'];
+        const plataformas = ['Netflix', 'Max', 'Spotify Familiar', 'Spotify Personal', 'Disney+', 'Crunchyroll', 'YouTube Premium', 'Canva', 'CapCut', 'Amazon Prime', 'IPTV'];
         contenedor.innerHTML = '';
         
         contenedor.style.display = 'grid';

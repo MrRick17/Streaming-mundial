@@ -26,7 +26,7 @@
             </div>
 
             <section class="kpi-section">
-                <div class="kpi-card">
+                <div class="kpi-card kpi-card--default">
                     <span class="kpi-card__title">Cuentas Madre</span>
                     <h2 class="kpi-card__value" id="kpi-madres">0</h2>
                 </div>
@@ -42,16 +42,16 @@
                     <span class="kpi-card__title">Ingreso Estimado</span>
                     <h2 class="kpi-card__value" id="kpi-ingresos">$0.00</h2>
                 </div>
-                <div class="kpi-card kpi-card--danger">
+                <div class="kpi-card kpi-card--warning">
                 <span class="kpi-card__title">Pago a Proveedores</span>
                     <h2 class="kpi-card__value" id="rep-proveedores">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;">Costo de Cuentas Madre</p>
+                    <p>Costo de Cuentas Madre</p>
                 </div>
-                <div class="kpi-card" style="border-top-color: #7D2AE8;">
-        <span class="kpi-card__title">Ganancia Neta</span>
-        <h2 class="kpi-card__value" id="rep-ganancia" style="color: #7D2AE8;">$0.00</h2>
-        <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Tu beneficio real</p>
-    </div>
+                <div class="kpi-card kpi-card--purple">
+                    <span class="kpi-card__title">Ganancia Neta</span>
+                    <h2 class="kpi-card__value" id="rep-ganancia">$0.00</h2>
+                    <p>Tu beneficio real</p>
+                </div>
             </section>
 
             <section class="vence-hoy-section" id="section-vence-hoy">
@@ -92,7 +92,8 @@
                 <button class="btn-filtro active" data-filtro="Todas" type="button">Todas</button>
                 <button class="btn-filtro" data-filtro="Netflix" type="button"><i class="fa-solid fa-play plat-netflix"></i> Netflix</button>
                 <button class="btn-filtro" data-filtro="Max" type="button"><i class="fa-solid fa-tv plat-max"></i> Max</button>
-                <button class="btn-filtro" data-filtro="Spotify" type="button"><i class="fa-brands fa-spotify plat-spotify"></i> Spotify</button>
+                <button class="btn-filtro" data-filtro="Spotify Familiar" type="button"><i class="fa-brands fa-spotify plat-spotify"></i> Spotify Familiar</button>
+                <button class="btn-filtro" data-filtro="Spotify Personal" type="button"><i class="fa-brands fa-spotify plat-spotify"></i> Spotify Personal</button>
                 <button class="btn-filtro" data-filtro="Disney+" type="button"><i class="fa-solid fa-star plat-disney"></i> Disney+</button>
                 <button class="btn-filtro" data-filtro="Amazon Prime" type="button"><i class="fa-brands fa-amazon plat-amazon"></i> Amazon Prime</button>
                 <button class="btn-filtro" data-filtro="Crunchyroll" type="button"><i class="fa-solid fa-fire plat-crunchyroll"></i> Crunchyroll</button>
@@ -147,28 +148,28 @@
                 <div class="kpi-card kpi-card--info">
                     <span class="kpi-card__title">Total Esperado</span>
                     <h2 class="kpi-card__value" id="rep-esperado">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Si todos pagan</p>
+                    <p>Si todos pagan</p>
                 </div>
                 <div class="kpi-card kpi-card--success">
                     <span class="kpi-card__title">Recaudado Actual</span>
                     <h2 class="kpi-card__value" id="rep-cobrado">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #10B981; margin-top: 5px;">Clientes al día</p>
+                    <p>Clientes al día</p>
                 </div>
                 <div class="kpi-card kpi-card--danger">
                     <span class="kpi-card__title">Pagos Pendientes</span>
                     <h2 class="kpi-card__value" id="rep-pendiente">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #EF4444; margin-top: 5px;">Dinero en la calle</p>
+                    <p>Dinero en la calle</p>
                 </div>
                 
-                <div class="kpi-card" style="border-top-color: #F59E0B;">
+                <div class="kpi-card kpi-card--warning">
                     <span class="kpi-card__title">Pago a Proveedores</span>
-                    <h2 class="kpi-card__value" id="rep-proveedores" style="color: #F59E0B;">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Costo de Cuentas Madre</p>
+                    <h2 class="kpi-card__value" id="rep-proveedores-2">$0.00</h2>
+                    <p>Costo de Cuentas Madre</p>
                 </div>
-                <div class="kpi-card" style="border-top-color: #7D2AE8;">
+                <div class="kpi-card kpi-card--purple">
                     <span class="kpi-card__title">Ganancia Neta</span>
-                    <h2 class="kpi-card__value" id="rep-ganancia" style="color: #7D2AE8;">$0.00</h2>
-                    <p style="font-size: 0.75rem; color: #6B7280; margin-top: 5px;">Tu beneficio real</p>
+                    <h2 class="kpi-card__value" id="rep-ganancia-2">$0.00</h2>
+                    <p>Tu beneficio real</p>
                 </div>
             </section>
 
@@ -245,7 +246,8 @@
                             <label>Plataforma</label>
                             <select id="nuevo-plataforma" class="select-basic">
                                 <option value="Netflix">Netflix</option>
-                                <option value="Spotify">Spotify</option>
+                                <option value="Spotify Familiar">Spotify Familiar</option>
+                                <option value="Spotify Personal">Spotify Personal</option>
                                 <option value="Max">Max</option>
                                 <option value="Disney+">Disney+</option>
                                 <option value="Amazon Prime">Amazon Prime</option>
@@ -385,7 +387,8 @@
                                 <i class="fa-solid fa-tv"></i>
                                 <select id="cliente-plataforma">
                                     <option value="Netflix">Netflix</option>
-                                    <option value="Spotify">Spotify</option>
+                                    <option value="Spotify Familiar">Spotify Familiar</option>
+                                    <option value="Spotify Personal">Spotify Personal</option>
                                     <option value="Max">Max</option>
                                     <option value="Disney+">Disney+</option>
                                     <option value="Amazon Prime">Amazon Prime</option>
@@ -415,7 +418,6 @@
                                 <input type="text" id="cliente-contrasena" placeholder="Contraseña o PIN del perfil">
                             </div>
 
-                            <!-- NUEVO CAMPO PARA IPTV -->
                             <div class="input-icon-wrapper" id="grupo-enlace-iptv" style="display: none;">
                                 <i class="fa-solid fa-link" style="color: #14B8A6;"></i>
                                 <input type="url" id="cliente-enlace" placeholder="Enlace de la lista IPTV / App">
@@ -498,7 +500,7 @@
 
     </main>
 
-    <!-- NAVEGACIÓN -->
+    <!-- NAVEGACIÓN (Actualizada para aspecto Glassmorphism Premium) -->
     <nav class="bottom-island">
         <a href="#" class="nav-item active" data-vista="inicio">
             <i class="fa-solid fa-house icon"></i>
@@ -517,9 +519,9 @@
             <span class="text">Finanzas</span>
         </a>
         <a href="#" class="nav-item" data-vista="configuracion">
-        <i class="fa-solid fa-gear icon"></i>
-        <span class="text">Ajustes</span>
-    </a>
+            <i class="fa-solid fa-gear icon"></i>
+            <span class="text">Ajustes</span>
+        </a>
     </nav>
     
     <div id="toast-container" class="toast-container"></div>
