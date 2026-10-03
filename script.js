@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 4. SINCRONIZACIÓN CON FIREBASE O LOCAL
+    // 4. SINCRONIZACIÓN CON FIREBASE O LOCAL (CORREGIDA PARA FILTROS)
     // ==========================================
     const guardarNube = () => {
         if (MODO_PRUEBA) {
@@ -98,9 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // ==========================================
-    // 4. SINCRONIZACIÓN CON FIREBASE O LOCAL (CORREGIDA)
-    // ==========================================
     const escucharNubeEnTiempoReal = () => {
         // Función auxiliar para refrescar manteniendo los filtros activos
         const refrescarVistasConFiltroActual = () => {
@@ -148,7 +145,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, (error) => {
             console.error("Error al escuchar Firebase:", error);
         });
-    
     };
 
     // ==========================================
@@ -170,50 +166,35 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================
-    // 6. VERIFICACIÓN DE VENCIMIENTOS
+    // 6. VERIFICACIÓN DE VENCIMIENTOS (HOY Y MAÑANA)
     // ==========================================
-    // ==========================================
-// 6. VERIFICACIÓN DE VENCIMIENTOS (ROBUSTA)
-// ==========================================
-// ==========================================
-// 6. VERIFICACIÓN DE VENCIMIENTOS (CORREGIDA)
-// ==========================================
-// ==========================================
-// 6. VERIFICACIÓN DE VENCIMIENTOS (HOY Y MAÑANA)
-// ==========================================
-// ==========================================
-// 6. VERIFICACIÓN DE VENCIMIENTOS (HOY Y MAÑANA)
-// ==========================================
-const verificarVencimientosClientes = () => {
-    const ahora = new Date();
-    // Inicio del día de hoy (00:00:00)
-    const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
-    // Fin del día de mañana (23:59:59)
-    const finMañana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 23, 59, 59, 999).getTime();
+    const verificarVencimientosClientes = () => {
+        const ahora = new Date();
+        // Inicio del día de hoy (00:00:00)
+        const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+        // Fin del día de mañana (23:59:59)
+        const finMañana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1, 23, 59, 59, 999).getTime();
 
-    let actualizado = false;
-    clientes.forEach(c => {
-        if (!c.fechaVencimiento) return;
+        let actualizado = false;
+        clientes.forEach(c => {
+            if (!c.fechaVencimiento) return;
 
-        let nuevoEstado = 'aldia';
-        if (c.fechaVencimiento < inicioHoy) {
-            nuevoEstado = 'moroso'; // Ya venció
-        } else if (c.fechaVencimiento <= finMañana) {
-            nuevoEstado = 'vence-hoy'; // Vence hoy o vence mañana (activa la alerta amarilla)
-        } else {
-            nuevoEstado = 'aldia';
-        }
+            let nuevoEstado = 'aldia';
+            if (c.fechaVencimiento < inicioHoy) {
+                nuevoEstado = 'moroso'; // Ya venció
+            } else if (c.fechaVencimiento <= finMañana) {
+                nuevoEstado = 'vence-hoy'; // Vence hoy o mañana
+            } else {
+                nuevoEstado = 'aldia';
+            }
 
-        if (c.estado !== nuevoEstado) {
-            c.estado = nuevoEstado;
-            actualizado = true;
-        }
-    });
-    if (actualizado) guardarNube();
-};
-
-
-
+            if (c.estado !== nuevoEstado) {
+                c.estado = nuevoEstado;
+                actualizado = true;
+            }
+        });
+        if (actualizado) guardarNube();
+    };
 
     const verificarVencimientosCuentas = () => {
         const hoy = new Date();
@@ -237,6 +218,66 @@ const verificarVencimientosClientes = () => {
     };
 
     // ==========================================
+    // AVISO AUTOMÁTICO AL ENTRAR (MODAL CENTRAL)
+    // ==========================================
+    let alertaInicioMostrada = false;
+
+    const mostrarModalAvisoHoy = (clientesHoy) => {
+        let modal = document.getElementById('modal-aviso-vencidos-hoy');
+        
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-aviso-vencidos-hoy';
+            modal.className = 'modal-overlay z-alto'; 
+            modal.innerHTML = `
+                <div class="modal-box" style="text-align: center; padding: 35px 25px; max-width: 400px; border-top: 4px solid #F59E0B;">
+                    <div style="font-size: 3.5rem; color: #F59E0B; margin-bottom: 15px; filter: drop-shadow(0 5px 15px rgba(245, 158, 11, 0.4));">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <h3 class="modal-box__title" style="color: #FFFFFF; font-size: 1.4rem; font-weight: 900; margin-bottom: 10px;">Aviso de Vencimiento</h3>
+                    <p class="modal-box__text" id="texto-aviso-hoy" style="color: rgba(255, 255, 255, 0.85); font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px;"></p>
+                    <div class="modal-box__buttons" style="display: flex; justify-content: center;">
+                        <button id="btn-cerrar-aviso-hoy" class="btn-primario btn-full-mt" style="width: 100%; margin-top: 0; padding: 12px; border-radius: 14px;">Entendido</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('btn-cerrar-aviso-hoy').addEventListener('click', () => {
+                modal.classList.add('modal-oculto');
+            });
+        }
+
+        document.getElementById('texto-aviso-hoy').innerHTML = `Tienes <strong>${clientesHoy.length}</strong> cliente(s) cuyo servicio vence exactamente el día de hoy.`;
+        modal.classList.remove('modal-oculto');
+    };
+
+    const verificarAlertasAlEntrar = () => {
+        if (alertaInicioMostrada) return;
+        if (typeof clientes === 'undefined' || !Array.isArray(clientes)) return;
+
+        alertaInicioMostrada = true;
+
+        const hoy = new Date();
+        const anioHoy = hoy.getFullYear();
+        const mesHoy = hoy.getMonth();
+        const diaHoy = hoy.getDate();
+
+        // Filtramos estrictamente a los clientes que vencen HOY para la alerta de inicio
+        const clientesHoy = clientes.filter(c => {
+            if (!c.fechaVencimiento) return false;
+            const f = new Date(c.fechaVencimiento);
+            return f.getFullYear() === anioHoy && f.getMonth() === mesHoy && f.getDate() === diaHoy;
+        });
+
+        if (clientesHoy.length > 0) {
+            setTimeout(() => {
+                mostrarModalAvisoHoy(clientesHoy);
+            }, 1000);
+        }
+    };
+
+    // ==========================================
     // 7. RENDERIZADO DE TARJETAS DE CLIENTE
     // ==========================================
     const generarHTMLTarjetaCliente = function(c) {
@@ -250,7 +291,7 @@ const verificarVencimientosClientes = () => {
         }
 
         const bgGradient = esMoroso ? 'bg-gradient-danger' : esHoy ? 'bg-gradient-warning' : 'bg-gradient-success';
-        const badgeTexto = esMoroso ? 'Atrasado' : esHoy ? 'Vence Hoy' : 'Al Día';
+        const badgeTexto = esMoroso ? 'Atrasado' : esHoy ? 'Vence Hoy/Mañana' : 'Al Día';
 
         let icon = 'fa-solid fa-play'; 
         if (c.servicioPlataforma.indexOf('Spotify') !== -1) { icon = 'fa-brands fa-spotify'; }
@@ -346,7 +387,7 @@ const verificarVencimientosClientes = () => {
         renderizarDashboardServicios();
         renderizarReportesFinancieros(totalEsperado);
         
-        // RENDERIZAR CLIENTES QUE VENCEN HOY
+        // RENDERIZAR CLIENTES QUE VENCEN HOY O MAÑANA
         const contVenceHoy = document.getElementById('contenedor-vence-hoy');
         const sectionVenceHoy = document.getElementById('section-vence-hoy');
         if (contVenceHoy && sectionVenceHoy) {
@@ -393,7 +434,9 @@ const verificarVencimientosClientes = () => {
                 contCuentasVencen.innerHTML = '';
             }
         }
-        
+
+        // Llamamos al modal de inicio aquí
+        verificarAlertasAlEntrar();
     };
 
     // ==========================================
@@ -583,6 +626,23 @@ const verificarVencimientosClientes = () => {
     // ==========================================
     // 11. GESTIÓN DE CUENTAS MADRE
     // ==========================================
+
+    const guardarYRenderizarCuentas = () => {
+        guardarNube();
+        
+        const filtroCuentasActivo = document.querySelector('#vista-cuentas .btn-filtro.active');
+        const valFiltroCuentas = filtroCuentasActivo ? filtroCuentasActivo.getAttribute('data-filtro') : 'Todas';
+        const textoBusqCuentas = document.getElementById('buscador-cuentas')?.value || '';
+        
+        if (textoBusqCuentas.trim() !== '') {
+            renderizarCuentas(textoBusqCuentas);
+        } else {
+            renderizarCuentas(valFiltroCuentas === 'Todas' ? '' : valFiltroCuentas);
+        }
+        
+        actualizarDashboard();
+    };
+
     const renderizarCuentas = function(filtro) {
         filtro = filtro || '';
         const grid = document.querySelector('#vista-cuentas .grid-cuentas');
@@ -691,6 +751,7 @@ const verificarVencimientosClientes = () => {
             const inputCorreoObj = document.getElementById('nuevo-correo');
             const correoGuardado = inputCorreoObj ? inputCorreoObj.value.trim() : 'Sin Correo';
             const plataforma = document.getElementById('nuevo-plataforma').value;
+            const estadoInicial = document.getElementById('nuevo-estado')?.value || 'aldia'; // Corrección Estado
             
             // Forzar máximo de perfiles si es Personal
             let perfilesMax = parseInt(document.getElementById('nuevo-perfiles').value) || 5;
@@ -720,11 +781,12 @@ const verificarVencimientosClientes = () => {
             const nuevaCuenta = {
                 id: Date.now(), plataforma: plataforma, icono: icono, color: color,
                 correo: correoGuardado, perfilesMax: perfilesMax, perfilesOcupados: 0,
-                estado: 'aldia', fechaVencimiento: fechaManual, subcuentas: subcuentasIniciales
+                estado: estadoInicial, // Agregado aquí
+                fechaVencimiento: fechaManual, subcuentas: subcuentasIniciales
             };
 
             cuentas.push(nuevaCuenta);
-            guardarYRenderizarCuentas();
+            guardarYRenderizarCuentas(); // Corrección: Llamada a la función ya existente
             toggleModal(modalAgregarId, false);
             formAgregarCuenta.reset();
             mostrarNotificacion('¡Cuenta Madre guardada con éxito!');
@@ -1212,11 +1274,11 @@ const verificarVencimientosClientes = () => {
         plataformas.forEach(plat => {
             const costoActual = costosProveedores[plat] || 0;
             contenedor.innerHTML += `
-                <div class="form-group" style="background: #F9FAFB; padding: 18px; border-radius: 12px; border: 1px solid #E5E7EB; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                    <label style="font-size: 0.9rem; color: #1F2937; margin-bottom: 10px; display: block; font-weight: 800; text-transform: uppercase;">${plat}</label>
+                <div class="form-group" style="background: rgba(255, 255, 255, 0.05); padding: 18px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);">
+                    <label style="font-size: 0.9rem; color: rgba(255,255,255,0.9); margin-bottom: 10px; display: block; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">${plat}</label>
                     <div class="input-icon-wrapper">
                         <i class="fa-solid fa-dollar-sign"></i>
-                        <input type="number" step="0.01" min="0" id="costo-${plat.replace(/\s+/g, '')}" class="input-costo" data-plat="${plat}" value="${costoActual}" style="background: #FFFFFF;">
+                        <input type="number" step="0.01" min="0" id="costo-${plat.replace(/\s+/g, '')}" class="input-costo" data-plat="${plat}" value="${costoActual}">
                     </div>
                 </div>
             `;
