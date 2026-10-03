@@ -194,78 +194,7 @@ const verificarVencimientosClientes = () => {
 };
 
 
-// ==========================================
-// NOTIFICACIÓN AUTOMÁTICA AL ENTRAR A LA APP
-// ==========================================
-// ==========================================
-// NOTIFICACIÓN PREMIUM AUTOMÁTICA AL ENTRAR
-// ==========================================
-// ==========================================
-// NOTIFICACIÓN PREMIUM AUTOMÁTICA AL ENTRAR (CENTRADA Y SEGURA)
-// ==========================================
-// ==========================================
-// AVISO AUTOMÁTICO AL ENTRAR (MODAL CENTRAL SÓLIDO)
-// ==========================================
-let alertaInicioMostrada = false;
 
-const mostrarModalAvisoHoy = (clientesHoy) => {
-    // Si ya existe el modal en el DOM, solo lo actualizamos y mostramos
-    let modal = document.getElementById('modal-aviso-vencidos-hoy');
-    
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-aviso-vencidos-hoy';
-        // Usamos tus clases de modal existentes para mantener el diseño idéntico
-        modal.className = 'modal-overlay z-alto'; 
-        modal.innerHTML = `
-            <div class="modal-box" style="text-align: center; padding: 35px 25px; max-width: 400px; border-top: 4px solid #F59E0B;">
-                <div style="font-size: 3.5rem; color: #F59E0B; margin-bottom: 15px; filter: drop-shadow(0 5px 15px rgba(245, 158, 11, 0.4));">
-                    <i class="fa-solid fa-clock"></i>
-                </div>
-                <h3 class="modal-box__title" style="color: #FFFFFF; font-size: 1.4rem; font-weight: 900; margin-bottom: 10px;">Aviso de Vencimiento</h3>
-                <p class="modal-box__text" id="texto-aviso-hoy" style="color: rgba(255, 255, 255, 0.85); font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px;"></p>
-                <div class="modal-box__buttons" style="display: flex; justify-content: center;">
-                    <button id="btn-cerrar-aviso-hoy" class="btn-primario btn-full-mt" style="width: 100%; margin-top: 0; padding: 12px; border-radius: 14px;">Entendido</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-
-        // Evento para cerrar el modal al hacer clic en el botón
-        document.getElementById('btn-cerrar-aviso-hoy').addEventListener('click', () => {
-            modal.classList.add('modal-oculto');
-        });
-    }
-
-    document.getElementById('texto-aviso-hoy').innerHTML = `Tienes <strong>${clientesHoy.length}</strong> cliente(s) cuyo servicio vence exactamente el día de hoy.`;
-    modal.classList.remove('modal-oculto');
-};
-
-const verificarAlertasAlEntrar = () => {
-    if (alertaInicioMostrada) return;
-    if (typeof clientes === 'undefined' || !Array.isArray(clientes)) return;
-
-    // Marcamos inmediatamente como verdadera para evitar bucles
-    alertaInicioMostrada = true;
-
-    const hoy = new Date();
-    const anioHoy = hoy.getFullYear();
-    const mesHoy = hoy.getMonth();
-    const diaHoy = hoy.getDate();
-
-    // Filtramos estrictamente a los clientes que vencen HOY
-    const clientesHoy = clientes.filter(c => {
-        if (!c.fechaVencimiento) return false;
-        const f = new Date(c.fechaVencimiento);
-        return f.getFullYear() === anioHoy && f.getMonth() === mesHoy && f.getDate() === diaHoy;
-    });
-
-    if (clientesHoy.length > 0) {
-        setTimeout(() => {
-            mostrarModalAvisoHoy(clientesHoy);
-        }, 1000);
-    }
-};
 
     const verificarVencimientosCuentas = () => {
         const hoy = new Date();
@@ -445,7 +374,7 @@ const verificarAlertasAlEntrar = () => {
                 contCuentasVencen.innerHTML = '';
             }
         }
-        mostrarNotificacionPremium();
+        
     };
 
     // ==========================================
