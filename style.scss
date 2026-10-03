@@ -688,3 +688,20 @@ input::placeholder, textarea::placeholder {
   70% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
   100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 }
+
+/* --- CORRECCIÓN DEFINITIVA PARA CONTENEDORES DE COSTOS --- */
+#contenedor-costos .form-group {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 14px !important;
+}
+
+#contenedor-costos label {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+#contenedor-costos input.input-costo {
+  background: rgba(10, 15, 30, 0.85) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
